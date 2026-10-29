@@ -43,19 +43,26 @@ select{max-width:300px}
   padding:7px 11px;border-bottom:1px solid var(--line)}
 .head h2{font-size:clamp(16px,1.3vw,22px);margin:0}
 .badge{background:#304967;color:#e1ecfb;border-radius:99px;padding:4px 8px;font-size:12px;font-weight:800}
-.question{padding:7px 11px;font-size:clamp(16px,1.2vw,21px);font-weight:800;line-height:1.5}
-.q{color:var(--blue);display:inline-block;margin-right:12px}
+.question{padding:8px 12px;font-size:clamp(16px,1.2vw,22px);font-weight:800;line-height:1.6}
+.q{color:var(--blue);display:inline-block;padding:2px 8px;margin:2px 4px;background:#10253d;border:1px solid #28476d;border-radius:6px}
 .short-card{display:flex;flex-direction:column;min-height:0;flex:1}
 .short-wrap{display:flex;justify-content:center;align-items:center;flex:1;min-height:90px;overflow:auto;padding:8px}
 .ladder{border-collapse:collapse;width:max-content;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
   font-size:clamp(22px,2.3vw,40px);line-height:1.25}
-.ladder td{white-space:nowrap;text-align:center;padding:.05em .18em}
-.ladder .div{color:var(--gold);font-weight:900;border-right:2px solid #f0f7ff}
-.ladder .line td:not(.div){border-bottom:2px solid #f0f7ff}
-.ladder .yes{color:var(--green);background:#60e6b322}
-.ladder .drop{color:#ffd166;background:#ffd16625}
+.ladder td{white-space:nowrap;text-align:center;padding:.1em .75em}
+.ladder .div{color:var(--gold);font-weight:900;border-right:3px solid #f0f7ff;padding:.1em .6em .1em .3em}
+.ladder .line td:not(.div){border-bottom:3px solid #f0f7ff}
+.ladder .yes{color:var(--green);background:#60e6b322;border-radius:4px}
+.ladder .drop{color:#ffd166;background:#ffd16625;border-radius:4px}
 .ladder .mark{color:var(--green)}
 .ladder sup{font-size:.65em}
+
+/* 標準分解式短除法專屬間距優化：拉開各數間距，避免多個因數乘積混雜黏在一起 */
+.ladder.factor-ladder td.col-num{
+  padding:.16em 1.25em;
+  min-width:4.2em;
+}
+
 .result{background:#0b182b;border-top:1px solid var(--line);padding:7px 11px;
   font-weight:900;font-size:clamp(15px,1.1vw,21px);line-height:1.45;overflow-wrap:anywhere}
 .answer{color:var(--green)}
@@ -76,29 +83,43 @@ canvas{display:block;width:100%;height:100%;background:var(--inner);border-radiu
 .visual-note{color:var(--muted);font-size:13px;padding:0 11px 7px}
 .controls{justify-content:center;border-top:1px solid var(--line)}
 .progress{min-width:65px;text-align:center;font-weight:800}
-.overlay{position:fixed;inset:0;z-index:30;background:#000d;display:none;
-  align-items:center;justify-content:center;padding:10px}
+
+/* 對照版彈窗：加大版面與短除法字體，投影至教室後排清晰可見 */
+.overlay{position:fixed;inset:0;z-index:30;background:#000e;display:none;
+  align-items:center;justify-content:center;padding:12px}
 .overlay.open{display:flex}
-.dialog{width:min(100%,1200px);max-height:96vh;overflow:auto;background:var(--panel);
-  border:1px solid var(--line);border-radius:14px}
-.dialog-head{position:sticky;top:0;z-index:2;background:var(--panel)}
-.dialog-body{padding:10px 12px 14px}
-.compare-tools{display:flex;align-items:center;flex-wrap:wrap;gap:8px;
-  padding:9px;background:#0d1b2d;border-radius:10px;margin-bottom:10px}
+.dialog{width:min(98vw,1560px);max-height:96vh;overflow:auto;background:var(--panel);
+  border:2px solid var(--line);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.7)}
+.dialog-head{position:sticky;top:0;z-index:2;background:var(--panel);padding:10px 14px;border-bottom:1px solid var(--line)}
+.dialog-body{padding:12px 16px 18px}
+.compare-tools{display:flex;align-items:center;flex-wrap:wrap;gap:10px;
+  padding:10px 14px;background:#0d1b2d;border-radius:10px;margin-bottom:12px}
 .compare-tools label{font-weight:800}
 .compare-tools select{max-width:min(100%,500px)}
-.compare-question{text-align:center;font-weight:900;font-size:clamp(18px,1.6vw,25px);margin:8px 0 12px}
-.compare-question .q{margin:0 7px}
-.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.compare-column{background:#0b1a2d;border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
-.compare-column h3{margin:0 0 7px;text-align:center;font-size:clamp(17px,1.5vw,23px)}
-.compare-ladder-wrap{overflow:auto;padding:4px;display:flex;justify-content:safe center}
-.compare-ladder-wrap .ladder{font-size:clamp(18px,1.8vw,30px)}
-.compare-result{background:#1d3450;padding:9px;border-radius:9px;
-  font-size:clamp(15px,1.2vw,20px);font-weight:900;line-height:1.6;overflow-wrap:anywhere}
-.compare-note{font-size:15px;line-height:1.5;margin:8px 0}
-.compare-tip{margin-top:10px;background:#ffd16612;border-left:4px solid var(--gold);
-  padding:9px 12px;line-height:1.5}
+.compare-question{text-align:center;font-weight:900;font-size:clamp(20px,1.8vw,28px);margin:8px 0 14px}
+.compare-question .q{margin:0 6px;padding:3px 10px;background:#10253d;border:1px solid #28476d;border-radius:8px}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.compare-column{background:#0b1a2d;border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0;display:flex;flex-direction:column}
+.compare-column h3{margin:0 0 10px;text-align:center;font-size:clamp(22px,2.2vw,34px);font-weight:900;letter-spacing:1px}
+.compare-ladder-wrap{overflow:auto;padding:16px 10px;display:flex;justify-content:safe center;align-items:center;min-height:220px;background:#06111e;border-radius:12px;margin-bottom:12px;border:1px solid #1a2f47}
+.compare-ladder-wrap .ladder{font-size:clamp(32px,3.2vw,56px);line-height:1.35}
+.compare-ladder-wrap .ladder td{padding:.12em .9em}
+.compare-ladder-wrap .ladder.factor-ladder td.col-num{padding:.18em 1.4em;min-width:4.2em}
+
+/* 教室投影專用超大字體模式 */
+.dialog.compare-zoom-huge .compare-ladder-wrap .ladder{
+  font-size:clamp(40px,4.5vw,72px);
+}
+.dialog.compare-zoom-huge .compare-ladder-wrap{
+  min-height:280px;
+}
+
+.compare-result{background:#162c47;border:1px solid #355377;padding:12px 14px;border-radius:10px;
+  font-size:clamp(18px,1.5vw,26px);font-weight:900;line-height:1.6;overflow-wrap:anywhere}
+.compare-note{font-size:clamp(16px,1.15vw,20px);line-height:1.6;margin:10px 0}
+.compare-tip{margin-top:12px;background:#ffd16618;border-left:5px solid var(--gold);
+  padding:12px 16px;line-height:1.6;font-size:clamp(15px,1.1vw,19px);border-radius:0 8px 8px 0}
+
 body.big .app{height:100vh;height:100dvh;min-height:0}
 body.big .layout{overflow:auto}
 body.big .canvas-wrap{min-height:0}
@@ -107,11 +128,11 @@ body.phone h1{width:100%}
 body.phone .canvas-wrap{height:390px;min-height:390px;flex:none}
 body.phone .controls{position:sticky;bottom:0;z-index:10}
 body.phone .ladder{font-size:clamp(20px,5vw,30px)}
-@media(max-width:650px){
+@media(max-width:768px){
   .compare-grid{grid-template-columns:1fr}
   .dialog{max-height:94vh}
   .compare-tools select{width:100%;max-width:100%}
-  .compare-ladder-wrap .ladder{font-size:22px}
+  .compare-ladder-wrap .ladder{font-size:26px}
 }
 @media(max-height:700px){
   body.big .top,body.big .setup,body.big .controls{padding:4px 8px}
@@ -196,9 +217,9 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 </div>
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
-  <div class="dialog">
+  <div class="dialog" id="dialogModal">
     <div class="head dialog-head">
-      <h2 id="dialogTitle">同一題：最大公因數 × 最小公倍數</h2>
+      <h2 id="dialogTitle">同一題：最大公因數 × 最小公倍數 左右對照</h2>
       <button type="button" class="btn" id="closeCompare">✕ 關閉</button>
     </div>
     <div class="dialog-body">
@@ -206,22 +227,25 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
         <label for="compareExamples">對照例題</label>
         <select id="compareExamples" aria-label="選擇左右對照例題"></select>
         <button type="button" class="btn" id="useCurrent">帶入主畫面題目</button>
+        <button type="button" class="btn gold" id="toggleZoom">🔍 投影超大字體</button>
         <span id="compareType" class="hint"></span>
       </div>
       <div id="compareQuestion" class="compare-question"></div>
       <div class="compare-grid">
         <section class="compare-column">
-          <h3 style="color:#75cfff">最大公因數</h3>
+          <h3 style="color:#75cfff">最大公因數 (GCD)</h3>
           <div id="compareGcd"></div>
         </section>
         <section class="compare-column">
-          <h3 style="color:#62e7b3">最小公倍數</h3>
+          <h3 style="color:#62e7b3">最小公倍數 (LCM)</h3>
           <div id="compareLcm"></div>
         </section>
       </div>
       <div class="compare-tip">
-        <strong>看框線：</strong>黃色除數是短除時選的質數；黃色底色的數在該步無法整除，直接落下。
-        最大公因數只乘左側除數；最小公倍數還要乘最後一列。
+        <strong>💡 對照看重點：</strong>
+        左側除數一律優先提出「三數皆能整除的公因數」（兩側步驟完全一致！）。
+        三數無公因數時，<strong>最大公因數即停止</strong>；<strong>最小公倍數則繼續提出兩數公因數</strong>（無法整除之數直接落下）。
+        最後最大公因數只乘左側；最小公倍數則是左側除數乘以最後一列。
       </div>
     </div>
   </div>
@@ -238,45 +262,25 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
   var colors=["#75cfff","#62e7b3","#ff9fc7"];
   var frames=["#ffd166","#c8a6ff","#ff8fa7","#62e7b3","#ffac69","#91b0ff","#ff8be1","#b5ef79"];
 
+  // 精簡例題：各典型教學情境各保留 1 個最具代表性的例題
   var examples={
     integer:[
-      {label:"6、9｜兩數基礎",values:["6","9"]},
-      {label:"8、12｜兩數基礎",values:["8","12"]},
-      {label:"12、18｜共同因數",values:["12","18"]},
-      {label:"15、25｜共同因數",values:["15","25"]},
-      {label:"18、24｜兩次短除",values:["18","24"]},
-      {label:"24、36｜標準分解式",values:["24","36"]},
-      {label:"20、30｜含質因數 5",values:["20","30"]},
-      {label:"8、9｜兩數互質",values:["8","9"]},
-      {label:"12、18、30｜三數基礎",values:["12","18","30"]},
-      {label:"12、18、20｜兩法對照",values:["12","18","20"]},
-      {label:"8、12、15｜落下",values:["8","12","15"]},
-      {label:"6、10、15｜兩兩有公因數",values:["6","10","15"]},
-      {label:"9、12、18｜三數倍數",values:["9","12","18"]},
-      {label:"12、15、20｜三數倍數",values:["12","15","20"]},
-      {label:"18、24、30｜共同分組",values:["18","24","30"]},
-      {label:"24、36、60｜多層分組",values:["24","36","60"]},
-      {label:"30、45、75｜含質因數 5",values:["30","45","75"]},
-      {label:"48、72、120｜指數比較",values:["48","72","120"]},
-      {label:"100、150、250｜較大數",values:["100","150","250"]},
-      {label:"1、12、18｜含 1",values:["1","12","18"]},
-      {label:"16、16、24｜有相同數",values:["16","16","24"]},
-      {label:"7、11、13｜三個質數",values:["7","11","13"]}
+      {label:"12、18 ｜ 兩數基礎",values:["12","18"]},
+      {label:"8、9 ｜ 兩數互質",values:["8","9"]},
+      {label:"12、18、30 ｜ 三數皆有公因數",values:["12","18","30"]},
+      {label:"12、18、20 ｜ 部分落下（對照經典）",values:["12","18","20"]},
+      {label:"6、10、15 ｜ 兩兩有公因數（無三數共同因數）",values:["6","10","15"]},
+      {label:"7、11、13 ｜ 三個質數互質",values:["7","11","13"]},
+      {label:"1、12、18 ｜ 包含數字 1",values:["1","12","18"]}
     ],
     factor:[
-      {label:"2²×3、2×3²｜兩數基礎",values:["2^2*3","2*3^2"]},
-      {label:"2³×3、2²×3²｜指數比較",values:["2^3*3","2^2*3^2"]},
-      {label:"3×5、5²｜共同質因數",values:["3*5","5^2"]},
-      {label:"2³、3²｜互質",values:["2^3","3^2"]},
-      {label:"2²×3、2×3²、2×3×5",values:["2^2*3","2*3^2","2*3*5"]},
-      {label:"2²×3、2×3²、2²×5｜對照",values:["2^2*3","2*3^2","2^2*5"]},
-      {label:"2³、2²×3、3×5｜落下",values:["2^3","2^2*3","3*5"]},
-      {label:"2×3、2×5、3×5｜兩兩有公因數",values:["2*3","2*5","3*5"]},
-      {label:"3²、2²×3、2×3²",values:["3^2","2^2*3","2*3^2"]},
-      {label:"2³×3、2²×3²、2²×3×5",values:["2^3*3","2^2*3^2","2^2*3*5"]},
-      {label:"2⁴×3、2³×3²、2³×3×5",values:["2^4*3","2^3*3^2","2^3*3*5"]},
-      {label:"2²×5²、2×3×5²、2×5³",values:["2^2*5^2","2*3*5^2","2*5^3"]},
-      {label:"1、2²×3、2×3²｜含 1",values:["1","2^2*3","2*3^2"]}
+      {label:"2²×3、2×3² ｜ 兩數基礎",values:["2^2*3","2*3^2"]},
+      {label:"2³、3² ｜ 兩數互質",values:["2^3","3^2"]},
+      {label:"2²×3、2×3²、2×3×5 ｜ 三數皆有公因數",values:["2^2*3","2*3^2","2*3*5"]},
+      {label:"2²×3、2×3²、2²×5 ｜ 部分落下（對照經典）",values:["2^2*3","2*3^2","2^2*5"]},
+      {label:"2×3、2×5、3×5 ｜ 兩兩有公因數（無三數共同因數）",values:["2*3","2*5","3*5"]},
+      {label:"7、11、13 ｜ 三個質數互質",values:["7","11","13"]},
+      {label:"1、2²×3、2×3² ｜ 包含數字 1",values:["1","2^2*3","2*3^2"]}
     ]
   };
 
@@ -338,13 +342,26 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     $("error").textContent="";return values;
   }
 
+  // 短除法核心演算法：LCM 優先提出所有數皆能整除之公因數，與 GCD 保持對照一致性
   function compute(values,kind){
     var rows=[values.slice()],ds=[];
     while(true){
       var current=rows[rows.length-1],d=0,max=Math.max.apply(null,current);
-      for(var p=2;p<=max;p++){
-        var count=current.filter(function(n){return n%p===0}).length;
-        if(kind==="gcd"?count===current.length:count>=2){d=p;break}
+      if(kind==="gcd"){
+        for(var p=2;p<=max;p++){
+          if(isPrime(p)&&current.every(function(n){return n%p===0})){d=p;break;}
+        }
+      }else{
+        // LCM 第一優先：找「全部數都能整除」的質公因數（與 GCD 同步對照）
+        for(var p=2;p<=max;p++){
+          if(isPrime(p)&&current.every(function(n){return n%p===0})){d=p;break;}
+        }
+        // LCM 第二優先：若已無三數公因數，再找「至少兩數能整除」的質數（未整除者落下）
+        if(!d){
+          for(var p=2;p<=max;p++){
+            if(isPrime(p)&&current.filter(function(n){return n%p===0}).length>=2){d=p;break;}
+          }
+        }
       }
       if(!d)break;
       ds.push(d);
@@ -354,19 +371,20 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
   }
 
   function ladder(c,type,shown,finished,comparison){
-    var html='<table class="ladder" aria-label="短除法"><tbody>';
+    var isFactor=type==="factor";
+    var html='<table class="ladder'+(isFactor?" factor-ladder":"")+'" aria-label="短除法"><tbody>';
     for(var i=0;i<shown;i++){
       var d=c.divisors[i],highlight=comparison||i===shown-1&&!finished;
-      html+='<tr class="line"><td class="div">'+d+"</td>";
+      html+='<tr class="line"><td class="div">'+(isFactor?factorHTML(d):d)+"</td>";
       c.rows[i].forEach(function(n){
         var cls=highlight?(n%d===0?"yes":"drop"):"";
-        html+='<td class="'+cls+'">'+show(n,type)+"</td>";
+        html+='<td class="col-num '+cls+'">'+show(n,type)+"</td>";
       });
       html+="</tr>";
     }
     html+='<tr><td class="div"></td>';
     c.rows[shown].forEach(function(n){
-      html+='<td class="'+(finished?"mark":"")+'">'+show(n,type)+"</td>";
+      html+='<td class="col-num '+(finished?"mark":"")+'">'+show(n,type)+"</td>";
     });
     return html+"</tr></tbody></table>";
   }
@@ -374,9 +392,13 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
   function resultHTML(values,c,kind,type){
     var d=c.divisors,last=c.rows[c.rows.length-1];
     var ans=kind==="gcd"?gcdAll(values):lcmAll(values);
-    var parts=kind==="gcd"?(d.length?d.map(String):["1"]):
-      d.map(String).concat(last.map(function(n){
-        return type==="factor"&&n!==1?"("+factorHTML(n)+")":show(n,type);
+    var parts=kind==="gcd"?(d.length?d.map(function(p){return type==="factor"?factorHTML(p):String(p)}):["1"]):
+      d.map(function(p){return type==="factor"?factorHTML(p):String(p)}).concat(last.map(function(n){
+        if(type==="factor"){
+          var f=factorHTML(n);
+          return f.indexOf("×")!==-1?"("+f+")":f;
+        }
+        return fmt(n);
       }));
     var expression=parts.join(" × ");
     var result=type==="factor"?factorHTML(ans):fmt(ans);
@@ -403,14 +425,14 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
   function compareColumn(values,type,kind){
     var c=compute(values,kind),last=c.rows[c.rows.length-1],d=c.divisors;
-    var stopping=kind==="gcd"?"最後一列沒有大於 1 的共同因數，停止。":
-      "最後一列任兩數都沒有大於 1 的共同因數，停止。";
-    var rule=kind==="gcd"?"每次所有數都能整除。":"每次至少兩數能整除；黃色底色的數直接落下。";
-    var answerLabel=kind==="gcd"?"左側除數":"左側除數 × 最後一列";
+    var stopping=kind==="gcd"?"最後一列沒有大於 1 的共同公因數，停止。":
+      "最後一列任兩數都沒有大於 1 的公因數（兩兩互質），停止。";
+    var rule=kind==="gcd"?"每次所有數都能整除。":"先提出三數共同公因數；三數無公因數時，再提出兩數公因數（黃底數直接落下）。";
+    var answerLabel=kind==="gcd"?"左側除數相乘":"左側除數 × 最後一列相乘";
     var factorNote=type==="factor"
       ?'<p class="compare-note">除以某個質數時，該質數的次方減 1；若原本沒有該質數，整個分解式直接落下。</p>':"";
     return '<div class="compare-ladder-wrap">'+ladder(c,type,d.length,true,true)+"</div>"+
-      '<p class="compare-note">'+rule+"<br>"+stopping+"</p>"+factorNote+
+      '<p class="compare-note"><strong>短除規則：</strong>'+rule+"<br><strong>停止條件：</strong>"+stopping+"</p>"+factorNote+
       '<div class="compare-result">'+answerLabel+"：<br>"+
       (kind==="gcd"?"最大公因數":"最小公倍數")+" ＝ "+resultHTML(values,c,kind,type)+"</div>";
   }
@@ -481,7 +503,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       }else if(step===k+1)html="不能再全部同除；把左側除數相乘。";
       else html="用最大公因數將每個原始數量等分。";
     }else{
-      if(step===0)html="保留原始長度；找<strong>至少兩個數</strong>能整除的質數。";
+      if(step===0)html="保留原始長度；優先找<strong>所有數都能整除</strong>的質數，若無則找至少兩數能整除之質數。";
       else if(step<=k){
         var divisor=calc.divisors[step-1],row=calc.rows[step-1];
         var drops=row.filter(function(n){return n%divisor!==0});
@@ -503,7 +525,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       "的"+(mode==="gcd"?"最大公因數":"最小公倍數")+"是？";
     var shown=Math.min(step,calc.divisors.length);
     $("short").innerHTML=ladder(calc,questionType,shown,step>calc.divisors.length,false);
-    $("ruleBadge").textContent=mode==="gcd"?"所有數都能除":"至少兩個數能除";
+    $("ruleBadge").textContent=mode==="gcd"?"所有數都能除":"優先三數同除，後兩數除落下";
     $("result").innerHTML=(mode==="gcd"?"最大公因數":"最小公倍數")+" ＝ "+
       (step>calc.divisors.length?resultHTML(nums,calc,mode,questionType):'<span class="answer">？</span>');
     $("stepBadge").textContent="步驟 "+step+" / "+total();
@@ -695,6 +717,10 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
   $("useCurrent").onclick=function(){
     var current=validate();if(!current)return;
     $("compareExamples").value="current";renderCompare(current,questionType);
+  };
+  $("toggleZoom").onclick=function(){
+    var isHuge=$("dialogModal").classList.toggle("compare-zoom-huge");
+    $("toggleZoom").textContent=isHuge?"🔍 還原正常字體":"🔍 投影超大字體";
   };
   $("closeCompare").onclick=function(){$("overlay").classList.remove("open");$("compareBtn").focus()};
   $("overlay").onclick=function(e){if(e.target===$("overlay"))$("overlay").classList.remove("open")};
