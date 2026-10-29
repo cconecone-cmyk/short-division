@@ -30,8 +30,8 @@ h1{font-size:clamp(18px,1.5vw,25px);margin:0 auto 0 0}
 .btn.gold{background:var(--gold);color:#302000;border-color:var(--gold)}
 .setup{background:#101f33;border-bottom:1px solid var(--line)}
 input,select{border:2px solid #49617f;border-radius:8px;background:#091728;color:#fff;padding:6px}
-input{width:72px;text-align:center}
-input.factor-input{width:130px}
+input{width:78px;text-align:center}
+input.factor-input{width:140px}
 select{max-width:300px}
 .hint{color:var(--muted);font-size:13px}
 .error{color:#ffb8bf;font-weight:800}
@@ -166,10 +166,10 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
   <section class="setup">
     <strong id="inputLabel">輸入整數</strong>
-    <input id="n1" type="number" min="1" max="500" value="12" aria-label="第一個數">
-    <input id="n2" type="number" min="1" max="500" value="18" aria-label="第二個數">
-    <input id="n3" type="number" min="1" max="500" value="30" aria-label="第三個數，可留空">
-    <span id="inputHint" class="hint">2～3 個數，各為 1～500</span>
+    <input id="n1" type="number" min="1" max="1000" value="12" aria-label="第一個數">
+    <input id="n2" type="number" min="1" max="1000" value="18" aria-label="第二個數">
+    <input id="n3" type="number" min="1" max="1000" value="30" aria-label="第三個數，可留空">
+    <span id="inputHint" class="hint">2～3 個數，各為 1～1000</span>
     <button type="button" class="btn gold" id="apply">開始</button>
     <button type="button" class="btn" id="random">🎲 隨機</button>
     <label for="examples">例題</label>
@@ -262,7 +262,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
   var colors=["#75cfff","#62e7b3","#ff9fc7"];
   var frames=["#ffd166","#c8a6ff","#ff8fa7","#62e7b3","#ffac69","#91b0ff","#ff8be1","#b5ef79"];
 
-  // 精簡例題：各典型教學情境各保留 1 個最具代表性的例題
+  // 精簡例題：各典型教學情境各保留 1 個最具代表性的例題（涵蓋至 1000 較大數）
   var examples={
     integer:[
       {label:"12、18 ｜ 兩數基礎",values:["12","18"]},
@@ -270,6 +270,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       {label:"12、18、30 ｜ 三數皆有公因數",values:["12","18","30"]},
       {label:"12、18、20 ｜ 部分落下（對照經典）",values:["12","18","20"]},
       {label:"6、10、15 ｜ 兩兩有公因數（無三數共同因數）",values:["6","10","15"]},
+      {label:"120、180、300 ｜ 較大數（可至 1000）",values:["120","180","300"]},
       {label:"7、11、13 ｜ 三個質數互質",values:["7","11","13"]},
       {label:"1、12、18 ｜ 包含數字 1",values:["1","12","18"]}
     ],
@@ -279,6 +280,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       {label:"2²×3、2×3²、2×3×5 ｜ 三數皆有公因數",values:["2^2*3","2*3^2","2*3*5"]},
       {label:"2²×3、2×3²、2²×5 ｜ 部分落下（對照經典）",values:["2^2*3","2*3^2","2^2*5"]},
       {label:"2×3、2×5、3×5 ｜ 兩兩有公因數（無三數共同因數）",values:["2*3","2*5","3*5"]},
+      {label:"2³×3×5、2²×3²×5、2²×3×5² ｜ 較大數（可至 1000）",values:["2^3*3*5","2^2*3^2*5","2^2*3*5^2"]},
       {label:"7、11、13 ｜ 三個質數互質",values:["7","11","13"]},
       {label:"1、2²×3、2×3² ｜ 包含數字 1",values:["1","2^2*3","2*3^2"]}
     ]
@@ -323,9 +325,9 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       var m=/^(\d+)(?:\^(\d+))?$/.exec(terms[i]);
       if(!m)return null;
       var p=Number(m[1]),e=m[2]===undefined?1:Number(m[2]);
-      if(!isPrime(p)||p<=last||e<1||e>8)return null;
+      if(!isPrime(p)||p<=last||e<1||e>10)return null;
       last=p;value*=Math.pow(p,e);
-      if(!Number.isSafeInteger(value)||value>500)return null;
+      if(!Number.isSafeInteger(value)||value>1000)return null;
     }
     return value;
   }
@@ -334,9 +336,9 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     if(!raw[0]||!raw[1]){$("error").textContent="請填寫前兩個題目。";return null}
     var a=raw[2]?raw:raw.slice(0,2);
     var values=a.map(function(x){return questionType==="integer"?Number(x):parseFactor(x)});
-    if(values.some(function(n){return n===null||!Number.isInteger(n)||n<1||n>500})){
-      $("error").textContent=questionType==="integer"?"請輸入 1～500 的整數。":
-        "例：2^4*3；質數由小到大、不重複，結果須為 1～500。";
+    if(values.some(function(n){return n===null||!Number.isInteger(n)||n<1||n>1000})){
+      $("error").textContent=questionType==="integer"?"請輸入 1～1000 的整數。":
+        "例：2^4*3；質數由小到大、不重複，結果須為 1～1000。";
       return null;
     }
     $("error").textContent="";return values;
@@ -465,7 +467,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       input.placeholder=i===2?"可留空":type==="integer"?"整數":"例如 2^4*3";
     });
     $("inputLabel").textContent=type==="integer"?"輸入整數":"輸入標準分解式";
-    $("inputHint").textContent=type==="integer"?"2～3 個數，各為 1～500":"例：2^4*3；次方用 ^，乘號用 *";
+    $("inputHint").textContent=type==="integer"?"2～3 個數，各為 1～1000":"例：2^4*3；次方用 ^，乘號用 *，結果須為 1～1000";
     populateExamples();stop();calc=compute(nums,mode);step=0;previousStep=0;render();
   }
   function setView(v){
