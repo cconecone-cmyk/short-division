@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>短除法動態教室</title>
+<style>
+:root{--bg:#081321;--panel:#162942;--inner:#0a192b;--line:#3b5575;
+  --text:#f3f7ff;--muted:#b8c9df;--gold:#ffd166;--green:#62e7b3;
+  --blue:#75cfff;--pink:#ff9fc7}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid white;outline-offset:2px}
+.app{min-height:100vh;display:flex;flex-direction:column}
+.top,.setup,.controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px 12px}
+.top,.controls{background:#192e49}
+.top{border-bottom:1px solid var(--line)}
+h1{font-size:clamp(18px,1.5vw,25px);margin:0 auto 0 0}
+.seg{display:flex;gap:3px;padding:3px;background:#0b192c;border-radius:10px}
+.seg button{border:0;border-radius:8px;padding:7px 10px;background:transparent;color:#d6e5f7;font-weight:800}
+.seg button.active{background:var(--gold);color:#302000}
+.view button.active{background:var(--blue);color:#08243a}
+.btn{border:1px solid #607a9a;border-radius:9px;padding:7px 10px;
+  background:#2b4261;color:#fff;font-weight:800}
+.btn.primary{background:var(--green);color:#082a1c;border-color:var(--green)}
+.btn.gold{background:var(--gold);color:#302000;border-color:var(--gold)}
+.setup{background:#101f33;border-bottom:1px solid var(--line)}
+input,select{border:2px solid #49617f;border-radius:8px;background:#091728;color:#fff;padding:6px}
+input{width:72px;text-align:center}
+input.factor-input{width:130px}
+select{max-width:300px}
+.hint{color:var(--muted);font-size:13px}
+.error{color:#ffb8bf;font-weight:800}
+.layout{flex:1;display:grid;grid-template-columns:minmax(300px,.9fr) minmax(400px,1.1fr);
+  gap:9px;padding:9px 12px;min-height:0}
+.left,.right{display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;min-width:0}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:7px 11px;border-bottom:1px solid var(--line)}
+.head h2{font-size:clamp(16px,1.3vw,22px);margin:0}
+.badge{background:#304967;color:#e1ecfb;border-radius:99px;padding:4px 8px;font-size:12px;font-weight:800}
+.question{padding:7px 11px;font-size:clamp(16px,1.2vw,21px);font-weight:800;line-height:1.5}
+.q{color:var(--blue);display:inline-block;margin-right:12px}
+.short-card{display:flex;flex-direction:column;min-height:0;flex:1}
+.short-wrap{display:flex;justify-content:center;align-items:center;flex:1;min-height:90px;overflow:auto;padding:8px}
+.ladder{border-collapse:collapse;width:max-content;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  font-size:clamp(22px,2.3vw,40px);line-height:1.25}
+.ladder td{white-space:nowrap;text-align:center;padding:.05em .18em}
+.ladder .div{color:var(--gold);font-weight:900;border-right:2px solid #f0f7ff}
+.ladder .line td:not(.div){border-bottom:2px solid #f0f7ff}
+.ladder .yes{color:var(--green);background:#60e6b322}
+.ladder .drop{color:#ffd166;background:#ffd16625}
+.ladder .mark{color:var(--green)}
+.ladder sup{font-size:.65em}
+.result{background:#0b182b;border-top:1px solid var(--line);padding:7px 11px;
+  font-weight:900;font-size:clamp(15px,1.1vw,21px);line-height:1.45;overflow-wrap:anywhere}
+.answer{color:var(--green)}
+.explain,.factor-body{padding:7px 11px;line-height:1.45;font-size:clamp(14px,1vw,18px)}
+.explain strong,.selected{color:var(--gold)}
+.factor-row{font-weight:800;margin:2px 0}
+.factor-number{display:inline-block;color:var(--blue);min-width:3em}
+sup{font-size:.7em}
+.factor-answer{border-top:1px solid var(--line);margin-top:4px;padding-top:4px;font-weight:800}
+.visual-card{flex:1;display:flex;flex-direction:column;min-height:0}
+.visual-info{display:flex;justify-content:space-between;align-items:center;gap:8px;
+  flex-wrap:wrap;padding:7px 11px}
+.visual-title{font-weight:900;font-size:clamp(16px,1.2vw,21px)}
+.chip{color:var(--gold);font-weight:900;background:#ffd16616;border:1px solid #ffd16670;
+  border-radius:8px;padding:4px 8px}
+.canvas-wrap{flex:1;min-height:260px;padding:0 10px 7px}
+canvas{display:block;width:100%;height:100%;background:var(--inner);border-radius:10px}
+.visual-note{color:var(--muted);font-size:13px;padding:0 11px 7px}
+.controls{justify-content:center;border-top:1px solid var(--line)}
+.progress{min-width:65px;text-align:center;font-weight:800}
+.overlay{position:fixed;inset:0;z-index:30;background:#000d;display:none;
+  align-items:center;justify-content:center;padding:10px}
+.overlay.open{display:flex}
+.dialog{width:min(100%,1200px);max-height:96vh;overflow:auto;background:var(--panel);
+  border:1px solid var(--line);border-radius:14px}
+.dialog-head{position:sticky;top:0;z-index:2;background:var(--panel)}
+.dialog-body{padding:10px 12px 14px}
+.compare-tools{display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  padding:9px;background:#0d1b2d;border-radius:10px;margin-bottom:10px}
+.compare-tools label{font-weight:800}
+.compare-tools select{max-width:min(100%,500px)}
+.compare-question{text-align:center;font-weight:900;font-size:clamp(18px,1.6vw,25px);margin:8px 0 12px}
+.compare-question .q{margin:0 7px}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.compare-column{background:#0b1a2d;border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+.compare-column h3{margin:0 0 7px;text-align:center;font-size:clamp(17px,1.5vw,23px)}
+.compare-ladder-wrap{overflow:auto;padding:4px;display:flex;justify-content:safe center}
+.compare-ladder-wrap .ladder{font-size:clamp(18px,1.8vw,30px)}
+.compare-result{background:#1d3450;padding:9px;border-radius:9px;
+  font-size:clamp(15px,1.2vw,20px);font-weight:900;line-height:1.6;overflow-wrap:anywhere}
+.compare-note{font-size:15px;line-height:1.5;margin:8px 0}
+.compare-tip{margin-top:10px;background:#ffd16612;border-left:4px solid var(--gold);
+  padding:9px 12px;line-height:1.5}
+body.big .app{height:100vh;height:100dvh;min-height:0}
+body.big .layout{overflow:auto}
+body.big .canvas-wrap{min-height:0}
+body.phone .layout{display:flex;flex-direction:column;max-width:720px;width:100%;margin:auto}
+body.phone h1{width:100%}
+body.phone .canvas-wrap{height:390px;min-height:390px;flex:none}
+body.phone .controls{position:sticky;bottom:0;z-index:10}
+body.phone .ladder{font-size:clamp(20px,5vw,30px)}
+@media(max-width:650px){
+  .compare-grid{grid-template-columns:1fr}
+  .dialog{max-height:94vh}
+  .compare-tools select{width:100%;max-width:100%}
+  .compare-ladder-wrap .ladder{font-size:22px}
+}
+@media(max-height:700px){
+  body.big .top,body.big .setup,body.big .controls{padding:4px 8px}
+  body.big .layout{padding:5px 8px;gap:5px}
+  body.big .left{gap:5px}
+  body.big .head{padding:4px 9px}
+  body.big .question,body.big .explain,body.big .factor-body{padding:4px 9px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>📐 短除法動態教室</h1>
+    <div class="seg" aria-label="教學主題">
+      <button type="button" id="gcdTab">最大公因數</button>
+      <button type="button" id="lcmTab">最小公倍數</button>
+    </div>
+    <div class="seg" aria-label="題目類型">
+      <button type="button" id="integerTab">整數題</button>
+      <button type="button" id="factorTab">標準分解式題</button>
+    </div>
+    <div class="seg view" aria-label="顯示版本">
+      <button type="button" id="bigView">🖥 大屏</button>
+      <button type="button" id="phoneView">📱 手機</button>
+    </div>
+    <button type="button" class="btn" id="compareBtn">📋 左右對照</button>
+    <button type="button" class="btn gold" id="fullscreen">⛶ 全螢幕</button>
+  </header>
+
+  <section class="setup">
+    <strong id="inputLabel">輸入整數</strong>
+    <input id="n1" type="number" min="1" max="500" value="12" aria-label="第一個數">
+    <input id="n2" type="number" min="1" max="500" value="18" aria-label="第二個數">
+    <input id="n3" type="number" min="1" max="500" value="30" aria-label="第三個數，可留空">
+    <span id="inputHint" class="hint">2～3 個數，各為 1～500</span>
+    <button type="button" class="btn gold" id="apply">開始</button>
+    <button type="button" class="btn" id="random">🎲 隨機</button>
+    <label for="examples">例題</label>
+    <select id="examples"></select>
+    <span id="error" class="error" role="alert"></span>
+  </section>
+
+  <main class="layout">
+    <div class="left">
+      <section class="card">
+        <div class="head"><h2>① 題目</h2><span id="questionBadge" class="badge"></span></div>
+        <div id="question" class="question"></div>
+      </section>
+      <section class="card short-card">
+        <div class="head"><h2>② 短除法</h2><span id="ruleBadge" class="badge"></span></div>
+        <div class="short-wrap"><div id="short"></div></div>
+        <div id="result" class="result" aria-live="polite"></div>
+      </section>
+      <section class="card">
+        <div class="head"><h2>③ 目前步驟</h2><span id="stepBadge" class="badge"></span></div>
+        <div id="explain" class="explain" aria-live="polite"></div>
+      </section>
+      <section class="card">
+        <div class="head"><h2>⑤ 標準分解式</h2><span class="badge">質數 × 次方</span></div>
+        <div id="factorization" class="factor-body"></div>
+      </section>
+    </div>
+    <div class="right">
+      <section class="card visual-card">
+        <div class="head"><h2 id="visualHeading">④ 動態圖解</h2><span id="visualBadge" class="badge"></span></div>
+        <div class="visual-info"><div id="visualTitle" class="visual-title"></div><div id="visualChip" class="chip"></div></div>
+        <div class="canvas-wrap" id="canvasWrap"><canvas id="canvas" aria-label="短除法動態圖解"></canvas></div>
+        <div id="visualNote" class="visual-note"></div>
+      </section>
+    </div>
+  </main>
+
+  <nav class="controls" aria-label="播放控制">
+    <button type="button" class="btn" id="reset">⟲ 重播</button>
+    <button type="button" class="btn" id="prev">◀ 上一步</button>
+    <span class="progress" id="progress"></span>
+    <button type="button" class="btn primary" id="next">下一步 ▶</button>
+    <button type="button" class="btn" id="auto">▶ 自動播放</button>
+  </nav>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+  <div class="dialog">
+    <div class="head dialog-head">
+      <h2 id="dialogTitle">同一題：最大公因數 × 最小公倍數</h2>
+      <button type="button" class="btn" id="closeCompare">✕ 關閉</button>
+    </div>
+    <div class="dialog-body">
+      <div class="compare-tools">
+        <label for="compareExamples">對照例題</label>
+        <select id="compareExamples" aria-label="選擇左右對照例題"></select>
+        <button type="button" class="btn" id="useCurrent">帶入主畫面題目</button>
+        <span id="compareType" class="hint"></span>
+      </div>
+      <div id="compareQuestion" class="compare-question"></div>
+      <div class="compare-grid">
+        <section class="compare-column">
+          <h3 style="color:#75cfff">最大公因數</h3>
+          <div id="compareGcd"></div>
+        </section>
+        <section class="compare-column">
+          <h3 style="color:#62e7b3">最小公倍數</h3>
+          <div id="compareLcm"></div>
+        </section>
+      </div>
+      <div class="compare-tip">
+        <strong>看框線：</strong>黃色除數是短除時選的質數；黃色底色的數在該步無法整除，直接落下。
+        最大公因數只乘左側除數；最小公倍數還要乘最後一列。
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  function $(id){return document.getElementById(id)}
+  var inputs=[$("n1"),$("n2"),$("n3")];
+  var mode="gcd",questionType="integer",view=innerWidth<750?"phone":"big";
+  var nums=[12,18,30],calc=null,step=0,previousStep=0,timer=null;
+  var canvas=$("canvas"),ctx=null,W=0,H=0,raf=null,start=0;
+  var colors=["#75cfff","#62e7b3","#ff9fc7"];
+  var frames=["#ffd166","#c8a6ff","#ff8fa7","#62e7b3","#ffac69","#91b0ff","#ff8be1","#b5ef79"];
+
+  var examples={
+    integer:[
+      {label:"6、9｜兩數基礎",values:["6","9"]},
+      {label:"8、12｜兩數基礎",values:["8","12"]},
+      {label:"12、18｜共同因數",values:["12","18"]},
+      {label:"15、25｜共同因數",values:["15","25"]},
+      {label:"18、24｜兩次短除",values:["18","24"]},
+      {label:"24、36｜標準分解式",values:["24","36"]},
+      {label:"20、30｜含質因數 5",values:["20","30"]},
+      {label:"8、9｜兩數互質",values:["8","9"]},
+      {label:"12、18、30｜三數基礎",values:["12","18","30"]},
+      {label:"12、18、20｜兩法對照",values:["12","18","20"]},
+      {label:"8、12、15｜落下",values:["8","12","15"]},
+      {label:"6、10、15｜兩兩有公因數",values:["6","10","15"]},
+      {label:"9、12、18｜三數倍數",values:["9","12","18"]},
+      {label:"12、15、20｜三數倍數",values:["12","15","20"]},
+      {label:"18、24、30｜共同分組",values:["18","24","30"]},
+      {label:"24、36、60｜多層分組",values:["24","36","60"]},
+      {label:"30、45、75｜含質因數 5",values:["30","45","75"]},
+      {label:"48、72、120｜指數比較",values:["48","72","120"]},
+      {label:"100、150、250｜較大數",values:["100","150","250"]},
+      {label:"1、12、18｜含 1",values:["1","12","18"]},
+      {label:"16、16、24｜有相同數",values:["16","16","24"]},
+      {label:"7、11、13｜三個質數",values:["7","11","13"]}
+    ],
+    factor:[
+      {label:"2²×3、2×3²｜兩數基礎",values:["2^2*3","2*3^2"]},
+      {label:"2³×3、2²×3²｜指數比較",values:["2^3*3","2^2*3^2"]},
+      {label:"3×5、5²｜共同質因數",values:["3*5","5^2"]},
+      {label:"2³、3²｜互質",values:["2^3","3^2"]},
+      {label:"2²×3、2×3²、2×3×5",values:["2^2*3","2*3^2","2*3*5"]},
+      {label:"2²×3、2×3²、2²×5｜對照",values:["2^2*3","2*3^2","2^2*5"]},
+      {label:"2³、2²×3、3×5｜落下",values:["2^3","2^2*3","3*5"]},
+      {label:"2×3、2×5、3×5｜兩兩有公因數",values:["2*3","2*5","3*5"]},
+      {label:"3²、2²×3、2×3²",values:["3^2","2^2*3","2*3^2"]},
+      {label:"2³×3、2²×3²、2²×3×5",values:["2^3*3","2^2*3^2","2^2*3*5"]},
+      {label:"2⁴×3、2³×3²、2³×3×5",values:["2^4*3","2^3*3^2","2^3*3*5"]},
+      {label:"2²×5²、2×3×5²、2×5³",values:["2^2*5^2","2*3*5^2","2*5^3"]},
+      {label:"1、2²×3、2×3²｜含 1",values:["1","2^2*3","2*3^2"]}
+    ]
+  };
+
+  function gcd(a,b){while(b){var r=a%b;a=b;b=r}return a}
+  function gcdAll(a){return a.reduce(function(x,y){return gcd(x,y)})}
+  function lcmAll(a){return a.reduce(function(x,y){return x/gcd(x,y)*y})}
+  function product(a){return a.reduce(function(x,y){return x*y},1)}
+  function fmt(n){return n.toLocaleString("zh-TW")}
+  function total(){return calc.divisors.length+2}
+  function stop(){if(timer!==null){clearInterval(timer);timer=null}$("auto").textContent="▶ 自動播放"}
+
+  function factorize(n){
+    var map={},p;
+    for(p=2;p*p<=n;p++)while(n%p===0){map[p]=(map[p]||0)+1;n/=p}
+    if(n>1)map[n]=(map[n]||0)+1;
+    return map;
+  }
+  function factorHTML(n){
+    var map=factorize(n),keys=Object.keys(map).map(Number).sort(function(a,b){return a-b});
+    if(!keys.length)return "1";
+    return keys.map(function(p){return p+(map[p]>1?"<sup>"+map[p]+"</sup>":"")}).join(" × ");
+  }
+  function factorPlain(n){
+    var map=factorize(n),keys=Object.keys(map).map(Number).sort(function(a,b){return a-b});
+    return keys.length?keys.map(function(p){return p+(map[p]>1?"^"+map[p]:"")}).join("×"):"1";
+  }
+  function factorInput(n){return factorPlain(n).replace(/×/g,"*")}
+  function show(n,type){return type==="factor"?factorHTML(n):fmt(n)}
+  function isPrime(n){
+    if(!Number.isInteger(n)||n<2)return false;
+    for(var p=2;p*p<=n;p++)if(n%p===0)return false;
+    return true;
+  }
+  function parseFactor(raw){
+    var s=raw.replace(/\s/g,"").replace(/[×xX·]/g,"*");
+    if(s==="1")return 1;
+    if(!s)return null;
+    var terms=s.split("*"),last=0,value=1;
+    for(var i=0;i<terms.length;i++){
+      var m=/^(\d+)(?:\^(\d+))?$/.exec(terms[i]);
+      if(!m)return null;
+      var p=Number(m[1]),e=m[2]===undefined?1:Number(m[2]);
+      if(!isPrime(p)||p<=last||e<1||e>8)return null;
+      last=p;value*=Math.pow(p,e);
+      if(!Number.isSafeInteger(value)||value>500)return null;
+    }
+    return value;
+  }
+  function validate(){
+    var raw=inputs.map(function(x){return x.value.trim()});
+    if(!raw[0]||!raw[1]){$("error").textContent="請填寫前兩個題目。";return null}
+    var a=raw[2]?raw:raw.slice(0,2);
+    var values=a.map(function(x){return questionType==="integer"?Number(x):parseFactor(x)});
+    if(values.some(function(n){return n===null||!Number.isInteger(n)||n<1||n>500})){
+      $("error").textContent=questionType==="integer"?"請輸入 1～500 的整數。":
+        "例：2^4*3；質數由小到大、不重複，結果須為 1～500。";
+      return null;
+    }
+    $("error").textContent="";return values;
+  }
+
+  function compute(values,kind){
+    var rows=[values.slice()],ds=[];
+    while(true){
+      var current=rows[rows.length-1],d=0,max=Math.max.apply(null,current);
+      for(var p=2;p<=max;p++){
+        var count=current.filter(function(n){return n%p===0}).length;
+        if(kind==="gcd"?count===current.length:count>=2){d=p;break}
+      }
+      if(!d)break;
+      ds.push(d);
+      rows.push(current.map(function(n){return n%d===0?n/d:n}));
+    }
+    return {rows:rows,divisors:ds};
+  }
+
+  function ladder(c,type,shown,finished,comparison){
+    var html='<table class="ladder" aria-label="短除法"><tbody>';
+    for(var i=0;i<shown;i++){
+      var d=c.divisors[i],highlight=comparison||i===shown-1&&!finished;
+      html+='<tr class="line"><td class="div">'+d+"</td>";
+      c.rows[i].forEach(function(n){
+        var cls=highlight?(n%d===0?"yes":"drop"):"";
+        html+='<td class="'+cls+'">'+show(n,type)+"</td>";
+      });
+      html+="</tr>";
+    }
+    html+='<tr><td class="div"></td>';
+    c.rows[shown].forEach(function(n){
+      html+='<td class="'+(finished?"mark":"")+'">'+show(n,type)+"</td>";
+    });
+    return html+"</tr></tbody></table>";
+  }
+
+  function resultHTML(values,c,kind,type){
+    var d=c.divisors,last=c.rows[c.rows.length-1];
+    var ans=kind==="gcd"?gcdAll(values):lcmAll(values);
+    var parts=kind==="gcd"?(d.length?d.map(String):["1"]):
+      d.map(String).concat(last.map(function(n){
+        return type==="factor"&&n!==1?"("+factorHTML(n)+")":show(n,type);
+      }));
+    var expression=parts.join(" × ");
+    var result=type==="factor"?factorHTML(ans):fmt(ans);
+    return expression+' ＝ <span class="answer">'+result+"</span>";
+  }
+
+  function populateExamples(){
+    var html='<option value="">選擇例題</option>';
+    examples[questionType].forEach(function(e,i){html+='<option value="'+i+'">'+e.label+"</option>"});
+    $("examples").innerHTML=html;
+  }
+  function populateCompare(){
+    var html='<option value="current">目前主畫面題目</option>';
+    ["integer","factor"].forEach(function(type){
+      html+='<optgroup label="'+(type==="integer"?"整數題例題":"標準分解式題例題")+'">';
+      examples[type].forEach(function(e,i){html+='<option value="'+type+':'+i+'">'+e.label+"</option>"});
+      html+="</optgroup>";
+    });
+    $("compareExamples").innerHTML=html;
+  }
+  function valuesFromExample(type,index){
+    return examples[type][index].values.map(function(s){return type==="integer"?Number(s):parseFactor(s)});
+  }
+
+  function compareColumn(values,type,kind){
+    var c=compute(values,kind),last=c.rows[c.rows.length-1],d=c.divisors;
+    var stopping=kind==="gcd"?"最後一列沒有大於 1 的共同因數，停止。":
+      "最後一列任兩數都沒有大於 1 的共同因數，停止。";
+    var rule=kind==="gcd"?"每次所有數都能整除。":"每次至少兩數能整除；黃色底色的數直接落下。";
+    var answerLabel=kind==="gcd"?"左側除數":"左側除數 × 最後一列";
+    var factorNote=type==="factor"
+      ?'<p class="compare-note">除以某個質數時，該質數的次方減 1；若原本沒有該質數，整個分解式直接落下。</p>':"";
+    return '<div class="compare-ladder-wrap">'+ladder(c,type,d.length,true,true)+"</div>"+
+      '<p class="compare-note">'+rule+"<br>"+stopping+"</p>"+factorNote+
+      '<div class="compare-result">'+answerLabel+"：<br>"+
+      (kind==="gcd"?"最大公因數":"最小公倍數")+" ＝ "+resultHTML(values,c,kind,type)+"</div>";
+  }
+  function renderCompare(values,type){
+    $("compareType").textContent=type==="factor"?"標準分解式表徵":"整數表徵";
+    $("compareQuestion").innerHTML="題目："+values.map(function(n){
+      return '<span class="q">'+show(n,type)+"</span>";
+    }).join("、");
+    $("compareGcd").innerHTML=compareColumn(values,type,"gcd");
+    $("compareLcm").innerHTML=compareColumn(values,type,"lcm");
+  }
+
+  function apply(){
+    var values=validate();if(!values)return;
+    nums=values;stop();calc=compute(nums,mode);step=0;previousStep=0;render();
+  }
+  function setMode(m){
+    var values=validate();if(!values)return;
+    nums=values;mode=m;stop();calc=compute(nums,mode);step=0;previousStep=0;render();
+  }
+  function setQuestionType(type){
+    if(type===questionType)return;
+    var values=validate();if(!values)return;
+    nums=values;questionType=type;
+    inputs.forEach(function(input,i){
+      input.type=type==="integer"?"number":"text";
+      input.className=type==="integer"?"":"factor-input";
+      input.inputMode=type==="integer"?"numeric":"text";
+      input.value=i<nums.length?(type==="integer"?String(nums[i]):factorInput(nums[i])):"";
+      input.placeholder=i===2?"可留空":type==="integer"?"整數":"例如 2^4*3";
+    });
+    $("inputLabel").textContent=type==="integer"?"輸入整數":"輸入標準分解式";
+    $("inputHint").textContent=type==="integer"?"2～3 個數，各為 1～500":"例：2^4*3；次方用 ^，乘號用 *";
+    populateExamples();stop();calc=compute(nums,mode);step=0;previousStep=0;render();
+  }
+  function setView(v){
+    view=v;document.body.classList.toggle("big",v==="big");document.body.classList.toggle("phone",v==="phone");
+    $("bigView").classList.toggle("active",v==="big");$("phoneView").classList.toggle("active",v==="phone");
+    $("bigView").setAttribute("aria-pressed",String(v==="big"));
+    $("phoneView").setAttribute("aria-pressed",String(v==="phone"));
+    requestAnimationFrame(function(){fitCanvas();fitShort();drawNow()});
+  }
+  function renderFactorization(){
+    var maps=nums.map(factorize),all={},selected={};
+    maps.forEach(function(m){Object.keys(m).forEach(function(p){all[p]=true})});
+    Object.keys(all).forEach(function(p){
+      var exps=maps.map(function(m){return m[p]||0});
+      var e=mode==="gcd"?Math.min.apply(null,exps):Math.max.apply(null,exps);
+      if(e>0)selected[p]=e;
+    });
+    var html=nums.map(function(n){
+      if(questionType==="factor")return '<div class="factor-row">'+factorHTML(n)+"</div>";
+      return '<div class="factor-row"><span class="factor-number">'+fmt(n)+"</span>＝ "+factorHTML(n)+"</div>";
+    }).join("");
+    var ready=step>calc.divisors.length;
+    var answer=mode==="gcd"?gcdAll(nums):lcmAll(nums);
+    html+='<div class="factor-answer">'+(mode==="gcd"?"共同質因數取最小次方":"出現過的質因數取最大次方")+"："+
+      (ready?'<span class="answer">'+factorHTML(answer)+"</span>":"？")+"</div>";
+    $("factorization").innerHTML=html;
+  }
+  function renderExplain(){
+    var k=calc.divisors.length,html="";
+    if(mode==="gcd"){
+      if(step===0)html="找<strong>所有數都能整除</strong>的質數；右側每格代表 1。";
+      else if(step<=k){
+        var d=calc.divisors[step-1],before=product(calc.divisors.slice(0,step-1));
+        html="同除以 <strong>"+d+"</strong>：將 "+d+" 個原有小組重新排列並框成大組，每組 "+(before*d)+" 格。";
+      }else if(step===k+1)html="不能再全部同除；把左側除數相乘。";
+      else html="用最大公因數將每個原始數量等分。";
+    }else{
+      if(step===0)html="保留原始長度；找<strong>至少兩個數</strong>能整除的質數。";
+      else if(step<=k){
+        var divisor=calc.divisors[step-1],row=calc.rows[step-1];
+        var drops=row.filter(function(n){return n%divisor!==0});
+        html="用 <strong>"+divisor+"</strong> 短除。"+
+          (drops.length?"黃色標記無法整除，直接落下。":"本列全部可以整除。");
+        if(questionType==="factor")html+="分解式中該質數的次方減 1。";
+      }else if(step===k+1)html="把左側除數與最後一列相乘。";
+      else html="將原始長度重複延伸，觀察共同終點。";
+    }
+    $("explain").innerHTML=html;
+  }
+  function render(){
+    [["gcdTab",mode==="gcd"],["lcmTab",mode==="lcm"],
+     ["integerTab",questionType==="integer"],["factorTab",questionType==="factor"]].forEach(function(a){
+      $(a[0]).classList.toggle("active",a[1]);$(a[0]).setAttribute("aria-pressed",String(a[1]));
+    });
+    $("questionBadge").textContent=questionType==="integer"?"整數題":"標準分解式題";
+    $("question").innerHTML=nums.map(function(n){return '<span class="q">'+show(n,questionType)+"</span>"}).join("、")+
+      "的"+(mode==="gcd"?"最大公因數":"最小公倍數")+"是？";
+    var shown=Math.min(step,calc.divisors.length);
+    $("short").innerHTML=ladder(calc,questionType,shown,step>calc.divisors.length,false);
+    $("ruleBadge").textContent=mode==="gcd"?"所有數都能除":"至少兩個數能除";
+    $("result").innerHTML=(mode==="gcd"?"最大公因數":"最小公倍數")+" ＝ "+
+      (step>calc.divisors.length?resultHTML(nums,calc,mode,questionType):'<span class="answer">？</span>');
+    $("stepBadge").textContent="步驟 "+step+" / "+total();
+    $("progress").textContent=step+" / "+total();
+    $("prev").disabled=step===0;$("next").disabled=step===total();
+    renderExplain();renderFactorization();
+    var size=product(calc.divisors.slice(0,Math.min(step,calc.divisors.length)));
+    $("visualHeading").textContent=mode==="gcd"?"④ 方格動態":"④ 長度動態";
+    $("visualBadge").textContent=mode==="gcd"?"重新排列 → 等分":"原始長度 → 共同倍數";
+    $("visualTitle").textContent=mode==="gcd"
+      ?(step===total()?"用最大公因數等分":"方格重新排列並框成組")
+      :(step===total()?"原始長度重複延伸":"保留原始長度，觀察商變短");
+    $("visualChip").innerHTML=mode==="gcd"?show(size,questionType)+" 格／組":
+      (step===total()?"共同終點 "+show(lcmAll(nums),questionType):"固定比例尺");
+    $("visualNote").textContent=mode==="gcd"?"每格代表 1；框線顯示目前分組。大數會自動縮小方格。":
+      (step===total()?"共同終點使用重新縮放的比例尺；刻度過密時省略。":"淡色框保留原始長度；亮色長條表示目前的商。");
+    start=performance.now();
+    requestAnimationFrame(function(){fitCanvas();fitShort();animate()});
+  }
+
+  function fitShort(){
+    var table=$("short").querySelector(".ladder"),wrap=$("short").parentElement;
+    if(!table)return;
+    table.style.fontSize="";
+    if(view!=="big"||!table.scrollHeight||!table.scrollWidth)return;
+    var base=parseFloat(getComputedStyle(table).fontSize);
+    var ratio=Math.min(1,(wrap.clientHeight-8)/table.scrollHeight,(wrap.clientWidth-8)/table.scrollWidth);
+    if(ratio<1)table.style.fontSize=Math.max(12,base*ratio)+"px";
+  }
+  function fitCanvas(){
+    if(!ctx)return;
+    var r=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);
+    W=Math.max(1,r.width);H=Math.max(1,r.height);
+    var w=Math.round(W*dpr),h=Math.round(H*dpr);
+    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function drawText(str,x,y,size,color,align){
+    ctx.fillStyle=color;ctx.font="700 "+size+"px sans-serif";
+    ctx.textAlign=align||"left";ctx.textBaseline="middle";ctx.fillText(str,x,y);
+  }
+  function geometry(n,size,w,h){
+    var count=n/size,cols=Math.max(1,Math.ceil(Math.sqrt(size))),rows=Math.ceil(size/cols),best=null;
+    for(var gc=1;gc<=count;gc++){
+      var gr=Math.ceil(count/gc),cell=Math.min(22,w/(gc*(cols+1)),h/(gr*(rows+1)));
+      if(!best||cell>best.cell)best={cell:cell,cols:cols,rows:rows,gc:gc};
+    }
+    return best;
+  }
+  function point(j,size,g,x,y){
+    var group=Math.floor(j/size),within=j%size,c=g.cell;
+    return {x:x+(group%g.gc)*(g.cols+1)*c+(within%g.cols)*c,
+      y:y+Math.floor(group/g.gc)*(g.rows+1)*c+Math.floor(within/g.cols)*c};
+  }
+  function drawGcd(t){
+    var k=calc.divisors.length,level=Math.min(step,k),old=Math.min(previousStep,k);
+    var size=product(calc.divisors.slice(0,level)),oldSize=product(calc.divisors.slice(0,old));
+    var band=H/nums.length,margin=10,header=Math.max(22,Math.min(34,band*.18));
+    var w=Math.max(10,W-2*margin),h=Math.max(10,band-header-10);
+    nums.forEach(function(n,i){
+      var y0=i*band,font=Math.max(11,Math.min(18,band*.12));
+      if(i%2){ctx.fillStyle="rgba(255,255,255,.025)";ctx.fillRect(0,y0,W,band)}
+      drawText(questionType==="factor"?factorPlain(n):fmt(n)+" 格",margin,y0+header/2,font,colors[i]);
+      drawText(fmt(n/size)+" 組 × "+fmt(size)+" 格",W-margin,y0+header/2,font,"#e6f1ff","right");
+      var g=geometry(n,size,w,h),og=geometry(n,oldSize,w,h);
+      var x=margin+(w-g.gc*(g.cols+1)*g.cell)/2;
+      var ox=margin+(w-og.gc*(og.cols+1)*og.cell)/2,y=y0+header;
+      var c=og.cell+(g.cell-og.cell)*t;
+      for(var j=0;j<n;j++){
+        var a=point(j,oldSize,og,ox,y),b=point(j,size,g,x,y),gap=Math.min(2,c*.12);
+        ctx.fillStyle=colors[i];ctx.globalAlpha=.8;
+        ctx.fillRect(a.x+(b.x-a.x)*t+gap/2,a.y+(b.y-a.y)*t+gap/2,Math.max(.5,c-gap),Math.max(.5,c-gap));
+      }
+      ctx.globalAlpha=1;
+      if(size>1||step===total()){
+        ctx.globalAlpha=Math.max(0,(t-.35)/.65);
+        ctx.strokeStyle=step===total()?"#ffd166":frames[(level-1+frames.length)%frames.length];
+        ctx.lineWidth=Math.max(1,Math.min(3,g.cell*.18));
+        for(var q=0;q<n/size;q++){
+          var gx=x+(q%g.gc)*(g.cols+1)*g.cell,gy=y+Math.floor(q/g.gc)*(g.rows+1)*g.cell;
+          ctx.strokeRect(gx-1,gy-1,g.cols*g.cell+2,g.rows*g.cell+2);
+        }
+        ctx.globalAlpha=1;
+      }
+    });
+  }
+  function drawLcm(t){
+    var k=calc.divisors.length,final=step===total(),band=H/nums.length;
+    var left=Math.max(50,Math.min(100,W*.15)),usable=Math.max(30,W-left-Math.max(20,W*.04));
+    var scale=final?lcmAll(nums):Math.max.apply(null,nums);
+    var row=calc.rows[Math.min(step,k)],prev=step>0&&step<=k?calc.rows[step-1]:row;
+    var font=Math.max(11,Math.min(18,band*.13));
+    nums.forEach(function(n,i){
+      var y0=i*band,y=y0+band*.43,bh=Math.max(12,Math.min(40,band*.25));
+      if(i%2){ctx.fillStyle="rgba(255,255,255,.025)";ctx.fillRect(0,y0,W,band)}
+      drawText(questionType==="factor"?factorPlain(n):fmt(n),left-8,y+bh/2,font,colors[i],"right");
+      ctx.strokeStyle="#7691b0";ctx.lineWidth=1;ctx.beginPath();
+      ctx.moveTo(left,y+bh+12);ctx.lineTo(left+usable,y+bh+12);ctx.stroke();
+      drawText("0",left,y+bh+25,Math.max(10,font-3),"#b5c7de");
+      if(!final){
+        var original=usable*n/scale,current=prev[i]+(row[i]-prev[i])*t;
+        ctx.fillStyle=colors[i];ctx.globalAlpha=.18;ctx.fillRect(left,y,original,bh);ctx.globalAlpha=1;
+        ctx.strokeStyle=colors[i];ctx.lineWidth=2;ctx.strokeRect(left,y,original,bh);
+        ctx.fillStyle=colors[i];ctx.fillRect(left,y,usable*current/scale,bh);
+        var status="原始 "+(questionType==="factor"?factorPlain(n):fmt(n))+
+          " ｜ 目前 "+(questionType==="factor"?factorPlain(row[i]):fmt(row[i]));
+        if(step>0&&step<=k&&prev[i]===row[i])status+="（落下）";
+        drawText(status,left,y0+band*.18,font,"#eef5ff");
+      }else{
+        var L=lcmAll(nums),count=L/n,end=usable*t;
+        ctx.fillStyle=colors[i];ctx.globalAlpha=.75;ctx.fillRect(left,y,end,bh);ctx.globalAlpha=1;
+        if(count<=100){
+          ctx.strokeStyle="rgba(255,255,255,.75)";ctx.lineWidth=1;
+          for(var j=1;j<count;j++){
+            var xx=usable*j/count;if(xx>end)break;
+            ctx.beginPath();ctx.moveTo(left+xx,y);ctx.lineTo(left+xx,y+bh);ctx.stroke();
+          }
+        }
+        drawText((questionType==="factor"?factorPlain(n):fmt(n))+" × "+fmt(count)+
+          " ＝ "+(questionType==="factor"?factorPlain(L):fmt(L)),left,y0+band*.18,font,"#eef5ff");
+        if(t>.98){ctx.strokeStyle="#ffd166";ctx.lineWidth=3;ctx.beginPath();
+          ctx.moveTo(left+usable,y-7);ctx.lineTo(left+usable,y+bh+8);ctx.stroke()}
+      }
+    });
+  }
+  function drawNow(){
+    if(!ctx||!W||!H)return;
+    ctx.clearRect(0,0,W,H);
+    if(mode==="gcd")drawGcd(1);else drawLcm(1);
+  }
+  function animate(){
+    if(!ctx)return;
+    if(raf!==null)cancelAnimationFrame(raf);
+    function frame(now){
+      var raw=Math.max(0,Math.min(1,(now-start)/1200)),t=1-Math.pow(1-raw,3);
+      ctx.clearRect(0,0,W,H);
+      if(mode==="gcd")drawGcd(t);else drawLcm(t);
+      if(raw<1)raf=requestAnimationFrame(frame);else raf=null;
+    }
+    raf=requestAnimationFrame(frame);
+  }
+  function go(n){previousStep=step;step=Math.max(0,Math.min(total(),n));render()}
+  function preset(values){
+    inputs.forEach(function(input,i){input.value=values[i]||""});apply();
+  }
+  function fail(e){console.error(e);$("error").textContent="發生錯誤，請重新整理頁面再試。"}
+
+  $("apply").onclick=function(){try{apply()}catch(e){fail(e)}};
+  $("gcdTab").onclick=function(){try{setMode("gcd")}catch(e){fail(e)}};
+  $("lcmTab").onclick=function(){try{setMode("lcm")}catch(e){fail(e)}};
+  $("integerTab").onclick=function(){try{setQuestionType("integer")}catch(e){fail(e)}};
+  $("factorTab").onclick=function(){try{setQuestionType("factor")}catch(e){fail(e)}};
+  $("bigView").onclick=function(){setView("big")};
+  $("phoneView").onclick=function(){setView("phone")};
+  $("prev").onclick=function(){stop();go(step-1)};
+  $("next").onclick=function(){stop();go(step+1)};
+  $("reset").onclick=function(){stop();go(0)};
+  $("auto").onclick=function(){
+    if(timer!==null){stop();return}
+    if(step===total())go(0);
+    $("auto").textContent="⏸ 暫停";
+    timer=setInterval(function(){if(step>=total()){stop();return}go(step+1);if(step>=total())stop()},3000);
+  };
+  $("examples").onchange=function(e){
+    if(e.target.value!=="")preset(examples[questionType][Number(e.target.value)].values);
+  };
+  $("random").onclick=function(){
+    var pool=examples[questionType];preset(pool[Math.floor(Math.random()*pool.length)].values);
+    $("examples").value="";
+  };
+
+  $("compareBtn").onclick=function(){
+    try{
+      var values=validate();if(!values)return;
+      stop();populateCompare();$("compareExamples").value="current";
+      renderCompare(values,questionType);
+      $("overlay").classList.add("open");$("closeCompare").focus();
+    }catch(e){fail(e)}
+  };
+  $("compareExamples").onchange=function(e){
+    var value=e.target.value;
+    if(value==="current"){
+      var current=validate();if(current)renderCompare(current,questionType);
+      return;
+    }
+    var parts=value.split(":"),type=parts[0],index=Number(parts[1]);
+    renderCompare(valuesFromExample(type,index),type);
+  };
+  $("useCurrent").onclick=function(){
+    var current=validate();if(!current)return;
+    $("compareExamples").value="current";renderCompare(current,questionType);
+  };
+  $("closeCompare").onclick=function(){$("overlay").classList.remove("open");$("compareBtn").focus()};
+  $("overlay").onclick=function(e){if(e.target===$("overlay"))$("overlay").classList.remove("open")};
+
+  $("fullscreen").onclick=function(){
+    try{
+      if(document.fullscreenElement){
+        var exit=document.exitFullscreen();if(exit&&exit.catch)exit.catch(function(){});
+      }else if(document.webkitFullscreenElement&&document.webkitExitFullscreen){
+        document.webkitExitFullscreen();
+      }else{
+        setView("big");var root=document.documentElement;
+        if(root.requestFullscreen){
+          var request=root.requestFullscreen();
+          if(request&&request.catch)request.catch(function(){alert("預覽環境可能不允許全螢幕，請在瀏覽器中直接開啟網頁。")});
+        }else if(root.webkitRequestFullscreen)root.webkitRequestFullscreen();
+        else alert("此瀏覽器不支援網頁全螢幕；iPhone Safari 可嘗試加入主畫面。");
+      }
+    }catch(e){alert("無法切換全螢幕，請在瀏覽器中直接開啟網頁後再試。")}
+  };
+  function fullscreenChanged(){
+    $("fullscreen").textContent=(document.fullscreenElement||document.webkitFullscreenElement)?"⛶ 離開全螢幕":"⛶ 全螢幕";
+    setTimeout(function(){fitCanvas();fitShort();drawNow()},100);
+  }
+  document.addEventListener("fullscreenchange",fullscreenChanged);
+  document.addEventListener("webkitfullscreenchange",fullscreenChanged);
+  document.addEventListener("keydown",function(e){
+    if(e.key==="Escape"&&$("overlay").classList.contains("open")){$("overlay").classList.remove("open");return}
+    var tag=document.activeElement&&document.activeElement.tagName;
+    if(/INPUT|TEXTAREA|SELECT|BUTTON/.test(tag||"")||$("overlay").classList.contains("open"))return;
+    if(e.key==="ArrowRight"){e.preventDefault();$("next").click()}
+    else if(e.key==="ArrowLeft"){e.preventDefault();$("prev").click()}
+    else if(e.key===" "){e.preventDefault();$("auto").click()}
+  });
+  window.addEventListener("resize",function(){fitCanvas();fitShort();drawNow()});
+
+  try{
+    ctx=canvas.getContext("2d");
+    populateExamples();populateCompare();calc=compute(nums,mode);setView(view);render();
+    if(!ctx)$("error").textContent="此瀏覽器無法顯示動畫，但計算與對照仍可使用。";
+    if(window.ResizeObserver){
+      var observer=new ResizeObserver(function(){fitCanvas();fitShort();drawNow()});
+      observer.observe($("canvasWrap"));
+    }
+  }catch(e){fail(e)}
+})();
+</script>
+</body>
+</html>
