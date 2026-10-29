@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>短除法動態教室</title>
 <style>
 :root{--bg:#081321;--panel:#162942;--inner:#0a192b;--line:#3b5575;
@@ -58,10 +61,13 @@ select{max-width:320px}
 .ladder .mark{color:var(--green)}
 .ladder sup{font-size:.65em}
 
-/* 標準分解式短除法專屬間距優化：拉開各數間距，避免多個因數乘積混雜黏在一起 */
+/* 標準分解式短除法專屬間距優化：拉開各數間距並加入細微虛線分隔，避免多個因數乘積混雜黏在一起 */
 .ladder.factor-ladder td.col-num{
-  padding:.16em 1.25em;
-  min-width:4.2em;
+  padding:.2em 1.8em;
+  min-width:4.8em;
+}
+.ladder.factor-ladder td.col-num + td.col-num{
+  border-left:1px dashed rgba(255,255,255,0.18);
 }
 
 .result{background:#0b182b;border-top:1px solid var(--line);padding:7px 11px;
@@ -107,8 +113,9 @@ canvas{display:block;width:100%;height:100%;background:var(--inner);border-radiu
 .compare-column h3{margin:0 0 10px;text-align:center;font-size:clamp(22px,2.2vw,34px);font-weight:900;letter-spacing:1px}
 .compare-ladder-wrap{overflow:auto;padding:16px 10px;display:flex;justify-content:safe center;align-items:center;min-height:220px;background:#06111e;border-radius:12px;margin-bottom:12px;border:1px solid #1a2f47}
 .compare-ladder-wrap .ladder{font-size:clamp(32px,3.2vw,56px);line-height:1.35}
-.compare-ladder-wrap .ladder td{padding:.12em .9em}
-.compare-ladder-wrap .ladder.factor-ladder td.col-num{padding:.18em 1.4em;min-width:4.2em}
+.compare-ladder-wrap .ladder td{padding:.12em 1.1em}
+.compare-ladder-wrap .ladder.factor-ladder td.col-num{padding:.22em 2em;min-width:5.5em}
+.compare-ladder-wrap .ladder.factor-ladder td.col-num + td.col-num{border-left:1px dashed rgba(255,255,255,0.22)}
 
 /* 教室投影專用超大字體模式 */
 .dialog.compare-zoom-huge .compare-ladder-wrap .ladder{
@@ -151,7 +158,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 <body>
 <div class="app">
   <header class="top">
-    <h1>📐 短除法動態教室</h1>
+    <h1>📐 短除法動態教室 <span style="font-size:12px;color:var(--green);background:rgba(98,231,179,0.15);padding:2px 8px;border-radius:6px;font-weight:700;vertical-align:middle">v2.2 應用題動畫版</span></h1>
     <div class="seg" aria-label="教學主題">
       <button type="button" id="gcdTab">最大公因數</button>
       <button type="button" id="lcmTab">最小公倍數</button>
@@ -295,10 +302,14 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       },
       getExplain:function(v,ans,curStep,tot){
         var L=v[0],W=v[1],qL=Math.floor(L/ans),qW=Math.floor(W/ans),totalBlocks=qL*qW;
-        if(curStep===0)return "【觀念分析】剪成正方形無剩餘，邊長必須同時整除長與寬；要「面積最大」，邊長即為長與寬的<strong>最大公因數</strong>。";
-        if(curStep<=calc.divisors.length)return "同除以公因數 <strong>"+calc.divisors[curStep-1]+"</strong> 進行短除。";
-        if(curStep===tot-1)return "求得最大公因數 GCD("+L+", "+W+") ＝ <strong>"+ans+" 公分</strong>（即正方形邊長）。";
-        return "【應用計算】<br>長可切： "+L+" ÷ "+ans+" ＝ <strong>"+qL+"</strong> 段<br>寬可切： "+W+" ÷ "+ans+" ＝ <strong>"+qW+"</strong> 段<br>共可剪成： "+qL+" × "+qW+" ＝ <strong style='color:var(--gold)'>"+totalBlocks+"</strong> 塊正方形。";
+        if(curStep===0)return "【步驟 0：觀念分析】剪成正方形無剩餘，邊長必須同時整除長與寬；要使正方形「面積最大」，邊長就是長與寬的<strong>最大公因數</strong>。";
+        if(curStep<=calc.divisors.length){
+          var d=calc.divisors[curStep-1];
+          var curAccum=product(calc.divisors.slice(0,curStep));
+          return "【步驟 "+curStep+"：短除法分解】長與寬同除以公因數 <strong>"+d+"</strong>。目前長寬各細分切割，暫時方格尺寸為 "+curAccum+" cm。";
+        }
+        if(curStep===tot-1)return "【步驟 "+curStep+"：求出邊長】短除法完成！求得最大公因數 GCD("+L+", "+W+") ＝ <strong>"+ans+" 公分</strong>（即正方形邊長）。";
+        return "【步驟 "+curStep+"：應用結論】<br>長可切： "+L+" ÷ "+ans+" ＝ <strong>"+qL+"</strong> 段<br>寬可切： "+W+" ÷ "+ans+" ＝ <strong>"+qW+"</strong> 段<br>共可剪成： "+qL+" × "+qW+" ＝ <strong style='color:var(--gold)'>"+totalBlocks+"</strong> 塊正方形。";
       },
       getSolution:function(v,ans){
         var L=v[0],W=v[1],qL=Math.floor(L/ans),qW=Math.floor(W/ans);
@@ -320,10 +331,13 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       },
       getExplain:function(v,ans,curStep,tot){
         var L=v[0],W=v[1],perimeter=2*(L+W),totalTrees=Math.floor(perimeter/ans);
-        if(curStep===0)return "【觀念分析】四角必種且距離相等，樹距必須能整除長與寬；要使種樹棵數「最少」，樹距就要「最大」，即求長與寬的<strong>最大公因數</strong>。";
-        if(curStep<=calc.divisors.length)return "同除以公因數 <strong>"+calc.divisors[curStep-1]+"</strong> 進行短除。";
-        if(curStep===tot-1)return "求得最大公因數 GCD("+L+", "+W+") ＝ <strong>"+ans+" 公尺</strong>（最大樹距）。";
-        return "【應用計算】<br>池塘周長 ＝ 2 × ("+L+" ＋ "+W+") ＝ "+perimeter+" 公尺<br>最少需種樹 ＝ 周長 ÷ 樹距 ＝ "+perimeter+" ÷ "+ans+" ＝ <strong style='color:var(--gold)'>"+totalTrees+"</strong> 棵（四角已包含在內）。";
+        if(curStep===0)return "【步驟 0：觀念分析】四角必種且距離相等，樹距必須能整除長與寬；要使種樹棵數「最少」，樹距就要「最大」，即求長與寬的<strong>最大公因數</strong>。";
+        if(curStep<=calc.divisors.length){
+          var d=calc.divisors[curStep-1];
+          return "【步驟 "+curStep+"：短除法分解】長與寬同除以公因數 <strong>"+d+"</strong>，縮減候選間距。";
+        }
+        if(curStep===tot-1)return "【步驟 "+curStep+"：求出樹距】短除法完成！求得最大公因數 GCD("+L+", "+W+") ＝ <strong>"+ans+" 公尺</strong>（即最大樹距）。";
+        return "【步驟 "+curStep+"：應用結論】<br>池塘周長 ＝ 2 × ("+L+" ＋ "+W+") ＝ "+perimeter+" 公尺<br>最少需種樹 ＝ 周長 ÷ 樹距 ＝ "+perimeter+" ÷ "+ans+" ＝ <strong style='color:var(--gold)'>"+totalTrees+"</strong> 棵（四角已包含在內）。";
       },
       getSolution:function(v,ans){
         var L=v[0],W=v[1],perimeter=2*(L+W),totalTrees=Math.floor(perimeter/ans);
@@ -347,10 +361,13 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       getExplain:function(v,ans,curStep,tot){
         var L=v[0],W=v[1],H=v[2];
         var qL=Math.floor(L/ans),qW=Math.floor(W/ans),qH=Math.floor(H/ans),totalCubes=qL*qW*qH;
-        if(curStep===0)return "【觀念分析】切成正方體無剩餘，邊長必須同時整除長、寬、高；要體積最大，邊長即為三者的<strong>最大公因數</strong>。";
-        if(curStep<=calc.divisors.length)return "三數同除以公因數 <strong>"+calc.divisors[curStep-1]+"</strong>。";
-        if(curStep===tot-1)return "求得最大公因數 GCD("+L+", "+W+", "+H+") ＝ <strong>"+ans+" 公分</strong>（正方體邊長）。";
-        return "【應用計算】<br>長可切 "+qL+" 段、寬可切 "+qW+" 段、高可切 "+qH+" 段<br>共可切成： "+qL+" × "+qW+" × "+qH+" ＝ <strong style='color:var(--gold)'>"+totalCubes+"</strong> 個正方體木塊。";
+        if(curStep===0)return "【步驟 0：觀念分析】切成正方體無剩餘，邊長必須同時整除長、寬、高；要體積最大，邊長即為三者的<strong>最大公因數</strong>。";
+        if(curStep<=calc.divisors.length){
+          var d=calc.divisors[curStep-1];
+          return "【步驟 "+curStep+"：短除法分解】三維空間同除以公因數 <strong>"+d+"</strong>，木塊在 X、Y、Z 軸同時剖分。";
+        }
+        if(curStep===tot-1)return "【步驟 "+curStep+"：求出邊長】求得最大公因數 GCD("+L+", "+W+", "+H+") ＝ <strong>"+ans+" 公分</strong>（正方體邊長）。";
+        return "【步驟 "+curStep+"：應用結論】<br>長可切 "+qL+" 段、寬可切 "+qW+" 段、高可切 "+qH+" 段<br>共可切成： "+qL+" × "+qW+" × "+qH+" ＝ <strong style='color:var(--gold)'>"+totalCubes+"</strong> 個正方體木塊。";
       },
       getSolution:function(v,ans){
         var L=v[0],W=v[1],H=v[2];
@@ -375,10 +392,12 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       getExplain:function(v,ans,curStep,tot){
         var L=v[0],W=v[1],H=v[2];
         var qL=Math.floor(ans/L),qW=Math.floor(ans/W),qH=Math.floor(ans/H),totalBlocks=qL*qW*qH;
-        if(curStep===0)return "【觀念分析】拼成正方體，大正方體的邊長必須同時是長方體長、寬、高的倍數；要求塊數「最少」，邊長即為三者的<strong>最小公倍數</strong>。";
-        if(curStep<=calc.divisors.length)return "短除法運算中（優先提出共同公因數）。";
-        if(curStep===tot-1)return "求得最小公倍數 LCM("+L+", "+W+", "+H+") ＝ <strong>"+ans+" 公分</strong>（大正方體邊長）。";
-        return "【應用計算】<br>長需排 "+qL+" 塊、寬需排 "+qW+" 塊、高需排 "+qH+" 塊<br>最少需要： "+qL+" × "+qW+" × "+qH+" ＝ <strong style='color:var(--gold)'>"+totalBlocks+"</strong> 塊積木。";
+        if(curStep===0)return "【步驟 0：觀念分析】拼成正方體，大正方體的邊長必須同時是長方體長、寬、高的倍數；要求塊數「最少」，邊長即為三者的<strong>最小公倍數</strong>。";
+        if(curStep<=calc.divisors.length){
+          return "【步驟 "+curStep+"：短除法分解】尋找長寬高的公倍數，積木在空間中沿三個維度擴展堆疊。";
+        }
+        if(curStep===tot-1)return "【步驟 "+curStep+"：求出邊長】求得最小公倍數 LCM("+L+", "+W+", "+H+") ＝ <strong>"+ans+" 公分</strong>（大正方體邊長）。";
+        return "【步驟 "+curStep+"：應用結論】<br>長需排 "+qL+" 塊、寬需排 "+qW+" 塊、高需排 "+qH+" 塊<br>最少需要： "+qL+" × "+qW+" × "+qH+" ＝ <strong style='color:var(--gold)'>"+totalBlocks+"</strong> 塊積木。";
       },
       getSolution:function(v,ans){
         var L=v[0],W=v[1],H=v[2];
@@ -403,10 +422,14 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       getExplain:function(v,ans,curStep,tot){
         var T1=v[0],T2=v[1],T3=v[2];
         var lap1=Math.floor(ans/T1),lap2=Math.floor(ans/T2),lap3=Math.floor(ans/T3);
-        if(curStep===0)return "【觀念分析】再次回到起點相遇，經過的時間必須同時是三人單圈秒數的倍數；求「最快相遇」，即為三者秒數的<strong>最小公倍數</strong>。";
-        if(curStep<=calc.divisors.length)return "進行短除法運算求最小公倍數。";
-        if(curStep===tot-1)return "求得最小公倍數 LCM("+T1+", "+T2+", "+T3+") ＝ <strong>"+ans+" 秒</strong>（再次相遇時間）。";
-        return "【應用計算】<br>相遇時間： <strong>"+ans+" 秒</strong>（即 "+(ans>=60?(Math.floor(ans/60)+" 分 "+(ans%60?(ans%60)+" 秒":"")):ans+" 秒")+"）<br>甲跑： "+ans+" ÷ "+T1+" ＝ <strong>"+lap1+"</strong> 圈<br>乙跑： "+ans+" ÷ "+T2+" ＝ <strong>"+lap2+"</strong> 圈<br>丙跑： "+ans+" ÷ "+T3+" ＝ <strong>"+lap3+"</strong> 圈。";
+        if(curStep===0)return "【步驟 0：觀念分析】再次回到起點相遇，經過時間必須同時是三人單圈秒數的倍數；求「最快相遇」，即為三者秒數的<strong>最小公倍數</strong>。目前三人就位在起跑線 (0 秒)。";
+        if(curStep===1)return "【步驟 1：第 1 階段推演】經過 "+T1+" 秒：甲跑完 1 圈回到起點，但乙在 3/4 圈處、丙在半圈處，未全員相遇！";
+        if(curStep<=calc.divisors.length){
+          var midT=Math.floor(ans*0.5);
+          return "【步驟 "+curStep+"：第 2 階段推演】經過 "+midT+" 秒：部分跑者抵達起點，但尚未全員同時齊平相遇！短除法持續尋求三數之最小公倍數。";
+        }
+        if(curStep===tot-1)return "【步驟 "+curStep+"：求出相遇時間】求得最小公倍數 LCM("+T1+", "+T2+", "+T3+") ＝ <strong>"+ans+" 秒</strong>！此時三人同時踩上起點線！";
+        return "【步驟 "+curStep+"：應用結論】<br>相遇時間： <strong>"+ans+" 秒</strong>（即 "+(ans>=60?(Math.floor(ans/60)+" 分 "+(ans%60?(ans%60)+" 秒":"")):ans+" 秒")+"）<br>甲跑： "+ans+" ÷ "+T1+" ＝ <strong>"+lap1+"</strong> 圈<br>乙跑： "+ans+" ÷ "+T2+" ＝ <strong>"+lap2+"</strong> 圈<br>丙跑： "+ans+" ÷ "+T3+" ＝ <strong>"+lap3+"</strong> 圈。";
       },
       getSolution:function(v,ans){
         var T1=v[0],T2=v[1],T3=v[2];
@@ -431,10 +454,14 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       getExplain:function(v,ans,curStep,tot){
         var D1=v[0],D2=v[1],D3=v[2];
         var c1=Math.floor(ans/D1),c2=Math.floor(ans/D2),c3=Math.floor(ans/D3);
-        if(curStep===0)return "【觀念分析】再次同時值班經過的天數，必須同時是各人值班週期天數的倍數；求「最少幾天後」，即為三者天數的<strong>最小公倍數</strong>。";
-        if(curStep<=calc.divisors.length)return "短除法運算中。";
-        if(curStep===tot-1)return "求得最小公倍數 LCM("+D1+", "+D2+", "+D3+") ＝ <strong>"+ans+" 天</strong>。";
-        return "【應用計算】<br>最少 <strong>"+ans+" 天</strong> 後三人會再次在同一天值班！<br>在此期間甲值了 "+c1+" 次、乙值了 "+c2+" 次、丙值了 "+c3+" 次。";
+        if(curStep===0)return "【步驟 0：觀念分析】再次同時值班經過天數，必須同時是各人值班週期天數的倍數；求「最少幾天後」，即為三者天數的<strong>最小公倍數</strong>。目前停在第 0 天。";
+        if(curStep===1)return "【步驟 1：時間推進觀察】時間推至第 "+(2*D1)+" 天：甲和丙可能同值班，但乙不在；各人週期尚未完全吻合。";
+        if(curStep<=calc.divisors.length){
+          var midDay=Math.floor(ans*0.5);
+          return "【步驟 "+curStep+"：尋找共同週期】時間推至第 "+midDay+" 天：僅有部分兩人同值班，三人未齊。短除法持續求取三數共同倍數。";
+        }
+        if(curStep===tot-1)return "【步驟 "+curStep+"：求出公倍數天數】求得最小公倍數 LCM("+D1+", "+D2+", "+D3+") ＝ <strong>"+ans+" 天</strong>！三軌值班點正式垂直重疊！";
+        return "【步驟 "+curStep+"：應用結論】<br>最少 <strong>"+ans+" 天</strong> 後三人會再次在同一天值班！<br>在此期間甲值了 "+c1+" 次、乙值了 "+c2+" 次、丙值了 "+c3+" 次。";
       },
       getSolution:function(v,ans){
         var D1=v[0],D2=v[1],D3=v[2];
@@ -635,7 +662,6 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
   }
   function setMode(m){
     if(questionType==="word"){
-      // 應用問題切換主題時，自動挑選該主題的第一個情境
       for(var k in wordScenarios){
         if(wordScenarios[k].kind===m){
           currentScenario=k;$("wordSelect").value=k;
@@ -724,7 +750,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       var sc=wordScenarios[currentScenario];
       var ans=mode==="gcd"?gcdAll(nums):lcmAll(nums);
       var ready=step>calc.divisors.length;
-      $("factorization").innerHTML=ready?sc.getSolution(nums,ans):'<div class="hint">進行短除法運算，最後步驟將自動列出生活情境算式與結論。</div>';
+      $("factorization").innerHTML=ready?sc.getSolution(nums,ans):'<div class="hint">請跟隨步驟進行短除法運算，最後步驟將自動列出生活情境算式與結論。</div>';
       return;
     }
     $("section5Title").textContent="⑤ 標準分解式";
@@ -798,7 +824,15 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     $("short").innerHTML=ladder(calc,questionType==="factor"?"factor":"integer",shown,step>calc.divisors.length,false);
     $("result").innerHTML=(mode==="gcd"?"最大公因數":"最小公倍數")+" ＝ "+
       (step>calc.divisors.length?resultHTML(nums,calc,mode,questionType==="factor"?"factor":"integer"):'<span class="answer">？</span>');
-    $("stepBadge").textContent="步驟 "+step+" / "+total();
+    
+    var curBadgeText="步驟 "+step+" / "+total();
+    if(questionType==="word"){
+      if(step===0)curBadgeText="步驟 0: 觀念分析";
+      else if(step<=calc.divisors.length)curBadgeText="步驟 "+step+": 短除第 "+step+" 步";
+      else if(step===calc.divisors.length+1)curBadgeText="步驟 "+step+": 求出"+(mode==="gcd"?"最大公因數":"最小公倍數");
+      else curBadgeText="步驟 "+step+": 應用算式結論";
+    }
+    $("stepBadge").textContent=curBadgeText;
     $("progress").textContent=step+" / "+total();
     $("prev").disabled=step===0;$("next").disabled=step===total();
     renderExplain();renderFactorization();
@@ -810,7 +844,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       $("visualTitle").textContent=curSc.hint;
       var curAns=mode==="gcd"?gcdAll(nums):lcmAll(nums);
       $("visualChip").innerHTML=(mode==="gcd"?"邊長/樹距 ":"相遇/值班 ")+curAns;
-      $("visualNote").textContent="動態圖解呈現如何將短除法計算結果，映射為實際幾何分割、週期循環與位置重合。";
+      $("visualNote").textContent="請按「下一步 ▶」逐步觀察幾何分割、空間堆疊或週期循環如何與左側短除法緊密呼應！";
     }else{
       var size=product(calc.divisors.slice(0,Math.min(step,calc.divisors.length)));
       $("visualHeading").textContent=mode==="gcd"?"④ 方格動態":"④ 長度動態";
@@ -850,7 +884,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     ctx.textAlign=align||"left";ctx.textBaseline="middle";ctx.fillText(str,x,y);
   }
 
-  // ================= 應用問題 Canvas 動畫繪製群 =================
+  // ================= 應用問題 Canvas 動畫逐步繪製群 =================
   function drawWord(t){
     ctx.save();
     if(currentScenario==="cutSquare")drawWordCutSquare(t);
@@ -862,75 +896,95 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     ctx.restore();
   }
 
-  // 1. 長方形切成最大正方形
+  // 1. 長方形切成最大正方形：每一步短除法，網格逐層剖分
   function drawWordCutSquare(t){
     var L=nums[0],Wd=nums[1],d=gcd(L,Wd);
-    var nx=L/d,ny=Wd/d;
+    var finalNx=L/d,finalNy=Wd/d;
     var pad=40,topPad=50;
     var maxW=W-2*pad,maxH=H-pad-topPad;
     var scale=Math.min(maxW/L,maxH/Wd);
     var rectW=L*scale,rectH=Wd*scale;
     var x0=(W-rectW)/2,y0=topPad+(maxH-rectH)/2;
 
+    // 依目前步驟計算剖分數
+    var K=calc.divisors.length;
+    var curDivisor=1, prevDivisor=1;
+    if(step===0){curDivisor=1;}
+    else if(step<=K){
+      curDivisor=product(calc.divisors.slice(0,step));
+      prevDivisor=product(calc.divisors.slice(0,step-1));
+    }else{
+      curDivisor=d;prevDivisor=d;
+    }
+
+    var stepNx=L/curDivisor, stepNy=Wd/curDivisor;
+    var isFinalAnswer=step>=total()-1;
+
     // 標題狀態列
-    drawText("長 "+L+" cm × 寬 "+Wd+" cm ｜ 目標：裁切成最大正方形",pad,22,15,"#75cfff");
-    var progressStep=step>calc.divisors.length;
-    var subText=progressStep?"裁切正方形邊長 ＝ "+d+" cm ｜ 共切成 "+nx+" × "+ny+" ＝ "+(nx*ny)+" 塊":"短除法找最大公因數中...";
-    drawText(subText,W-pad,22,15,progressStep?"#62e7b3":"#ffd166","right");
+    drawText("長 "+L+" cm × 寬 "+Wd+" cm ｜ 步驟 "+step+"："+(step===0?"完整未切割紙板":(isFinalAnswer?"切割完成！邊長 "+d+" cm":"同除以公因數，細分網格")),pad,22,15,"#75cfff");
+    var subText=isFinalAnswer?"正方形邊長 ＝ "+d+" cm ｜ 共 "+finalNx+" × "+finalNy+" ＝ "+(finalNx*finalNy)+" 塊":"目前均分單位："+curDivisor+" cm";
+    drawText(subText,W-pad,22,15,isFinalAnswer?"#62e7b3":"#ffd166","right");
 
     // 底板長方形
     ctx.fillStyle="#10253f";ctx.fillRect(x0,y0,rectW,rectH);
     ctx.strokeStyle="#75cfff";ctx.lineWidth=2;ctx.strokeRect(x0,y0,rectW,rectH);
 
-    // 標示尺寸
+    // 尺寸標註
     drawText(L+" cm",x0+rectW/2,y0-14,14,"#f3f7ff","center");
-    drawText(Wd+" cm",x0-12,y0+rectH/2,14,"#f3f7ff","right");
+    drawText(Wd+" cm",x0-14,y0+rectH/2,14,"#f3f7ff","right");
 
-    if(step>0){
-      var animT=progressStep?t:0.3;
-      var curNx=progressStep?nx:Math.min(nx,step+1);
-      var curNy=progressStep?ny:Math.min(ny,step+1);
-      var cellW=rectW/nx,cellH=rectH/ny;
+    if(step===0){
+      // 步驟 0：展示虛線問號樣本
+      ctx.setLineDash([4,4]);ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
+      var qSz=Math.min(rectW/3,rectH/2);
+      ctx.strokeRect(x0,y0,qSz,qSz);
+      ctx.setLineDash([]);
+      drawText("? cm",x0+qSz/2,y0+qSz/2,14,"#ffd166","center");
+      drawText("要剪成最大正方形...",x0+rectW/2,y0+rectH/2,16,"rgba(255,209,102,0.6)","center");
+    }else{
+      // 步驟 1～K+2：依目前累積除數繪製網格
+      var nx=Math.round(stepNx), ny=Math.round(stepNy);
+      var cellW=rectW/nx, cellH=rectH/ny;
 
-      ctx.fillStyle="rgba(98, 231, 179, 0.15)";
+      ctx.fillStyle="rgba(98, 231, 179, 0.14)";
       ctx.strokeStyle="rgba(255, 209, 102, 0.85)";
-      ctx.lineWidth=Math.max(1,2*animT);
+      ctx.lineWidth=isFinalAnswer?2:1.2;
 
       for(var r=0;r<ny;r++){
         for(var c=0;c<nx;c++){
           var cx=x0+c*cellW,cy=y0+r*cellH;
           if((c+r)%2===0)ctx.fillRect(cx,cy,cellW,cellH);
           ctx.strokeRect(cx,cy,cellW,cellH);
-          if(progressStep && nx*ny<=64 && animT>0.6){
+          if(isFinalAnswer && nx*ny<=64){
             var idx=r*nx+c+1;
-            drawText(String(idx),cx+cellW/2,cy+cellH/2,Math.min(14,cellH*0.45),"#ffd166","center");
+            drawText(String(idx),cx+cellW/2,cy+cellH/2,Math.min(15,cellH*0.42),"#ffd166","center");
           }
         }
       }
 
-      // 強調第一塊正方形邊長
-      if(progressStep){
-        ctx.strokeStyle="#ffd166";ctx.lineWidth=3;
-        ctx.strokeRect(x0,y0,cellW,cellH);
-        drawText(d+"cm",x0+cellW/2,y0+cellH+12,12,"#ffd166","center");
-      }
+      // 高亮標示目前格子的實際長寬
+      ctx.strokeStyle="#ffd166";ctx.lineWidth=3;
+      ctx.strokeRect(x0,y0,cellW,cellH);
+      drawText((isFinalAnswer?d:curDivisor)+" cm",x0+cellW/2,y0+cellH+14,13,"#ffd166","center");
     }
   }
 
-  // 2. 長方形池塘周圍種樹
+  // 2. 長方形池塘周圍種樹：逐步標定樹位與間距
   function drawWordPlantTrees(t){
     var L=nums[0],Wd=nums[1],d=gcd(L,Wd);
-    var nx=L/d,ny=Wd/d,totalTrees=2*(nx+ny);
+    var finalNx=L/d,finalNy=Wd/d,totalTrees=2*(finalNx+finalNy);
     var pad=50,topPad=50;
     var maxW=W-2*pad,maxH=H-pad-topPad;
     var scale=Math.min(maxW/L,maxH/Wd);
     var rectW=L*scale,rectH=Wd*scale;
     var x0=(W-rectW)/2,y0=topPad+(maxH-rectH)/2;
 
+    var K=calc.divisors.length;
+    var isDone=step>=total()-1;
+
     drawText("長 "+L+" m × 寬 "+Wd+" m 池塘 ｜ 周長 "+(2*(L+Wd))+" m",pad,22,15,"#75cfff");
-    var progressStep=step>calc.divisors.length;
-    var subText=progressStep?"最大樹距 ＝ "+d+" m ｜ 最少需種 "+totalTrees+" 棵樹":"尋找能整除長寬的最大樹距...";
-    drawText(subText,W-pad,22,15,progressStep?"#62e7b3":"#ffd166","right");
+    var subText=isDone?"最大樹距 ＝ "+d+" m ｜ 最少需種 "+totalTrees+" 棵樹":(step===0?"【步驟 0】四個頂角先定位":"【步驟 "+step+"】短除逐步求取最大樹距...");
+    drawText(subText,W-pad,22,15,isDone?"#62e7b3":"#ffd166","right");
 
     // 池塘水面
     ctx.fillStyle="#092842";ctx.fillRect(x0,y0,rectW,rectH);
@@ -939,28 +993,38 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
     // 收集所有樹的座標
     var pts=[];
-    for(var c=0;c<nx;c++)pts.push({x:x0+c*(rectW/nx),y:y0,corner:c===0});
-    for(var r=0;r<ny;r++)pts.push({x:x0+rectW,y:y0+r*(rectH/ny),corner:r===0});
-    for(var c2=nx;c2>0;c2--)pts.push({x:x0+c2*(rectW/nx),y:y0+rectH,corner:c2===nx});
-    for(var r2=ny;r2>0;r2--)pts.push({x:x0,y:y0+r2*(rectH/ny),corner:r2===ny});
+    var curNx=isDone?finalNx:Math.max(1,Math.round(finalNx*(step/total())));
+    var curNy=isDone?finalNy:Math.max(1,Math.round(finalNy*(step/total())));
 
-    var countToShow=progressStep?Math.round(pts.length*t):4;
-    for(var i=0;i<countToShow;i++){
-      var pt=pts[i];
-      // 繪製樹木圖形
-      ctx.fillStyle="#8b5a2b";ctx.fillRect(pt.x-2,pt.y,4,8);
-      ctx.beginPath();ctx.arc(pt.x,pt.y-3,pt.corner?8:6,0,Math.PI*2);
-      ctx.fillStyle=pt.corner?"#ffd166":"#4ade80";ctx.fill();
-      ctx.strokeStyle="#081321";ctx.lineWidth=1.5;ctx.stroke();
-    }
+    for(var c=0;c<curNx;c++)pts.push({x:x0+c*(rectW/curNx),y:y0,corner:c===0});
+    for(var r=0;r<curNy;r++)pts.push({x:x0+rectW,y:y0+r*(rectH/curNy),corner:r===0});
+    for(var c2=curNx;c2>0;c2--)pts.push({x:x0+c2*(rectW/curNx),y:y0+rectH,corner:c2===curNx});
+    for(var r2=curNy;r2>0;r2--)pts.push({x:x0,y:y0+r2*(rectH/curNy),corner:r2===curNy});
 
-    // 標註角點與樹距
-    drawText("★ 四角必種",x0,y0-15,12,"#ffd166");
-    if(progressStep && nx>0){
-      var segW=rectW/nx;
-      ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(x0,y0-6);ctx.lineTo(x0+segW,y0-6);ctx.stroke();
-      drawText(d+"m",x0+segW/2,y0-16,12,"#ffd166","center");
+    if(step===0){
+      // 僅標記四個角落樹
+      var corners=[{x:x0,y:y0},{x:x0+rectW,y:y0},{x:x0+rectW,y:y0+rectH},{x:x0,y:y0+rectH}];
+      corners.forEach(function(pt){
+        ctx.beginPath();ctx.arc(pt.x,pt.y,8,0,Math.PI*2);
+        ctx.fillStyle="#ffd166";ctx.fill();
+        ctx.strokeStyle="#081321";ctx.lineWidth=2;ctx.stroke();
+      });
+      drawText("★ 四角必先種 4 棵",x0+rectW/2,y0-15,13,"#ffd166","center");
+    }else{
+      var countToShow=isDone?pts.length:Math.max(4,Math.round(pts.length*(step/total())));
+      for(var i=0;i<countToShow;i++){
+        var pt=pts[i];
+        ctx.fillStyle="#8b5a2b";ctx.fillRect(pt.x-2,pt.y,4,8);
+        ctx.beginPath();ctx.arc(pt.x,pt.y-3,pt.corner?8:6,0,Math.PI*2);
+        ctx.fillStyle=pt.corner?"#ffd166":"#4ade80";ctx.fill();
+        ctx.strokeStyle="#081321";ctx.lineWidth=1.5;ctx.stroke();
+      }
+      if(isDone && finalNx>0){
+        var segW=rectW/finalNx;
+        ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(x0,y0-6);ctx.lineTo(x0+segW,y0-6);ctx.stroke();
+        drawText(d+"m",x0+segW/2,y0-16,13,"#ffd166","center");
+      }
     }
   }
 
@@ -976,31 +1040,28 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke()}
   }
 
-  // 3. 長方體切成小正方體
+  // 3. 長方體切成小正方體：3D 網格逐步剖分與單元正方體抽出
   function drawWordCutCube(t){
     var L=nums[0],Wd=nums[1],Hgt=nums[2],d=gcdAll(nums);
     var nx=L/d,ny=Wd/d,nz=Hgt/d,totalCubes=nx*ny*nz;
     var cx=W/2,cy=H/2+25;
     var s=Math.min((W*0.35)/(nx+ny),(H*0.42)/(nz+(nx+ny)*0.5),26);
 
+    var isDone=step>=total()-1;
     drawText("長方體 "+L+" × "+Wd+" × "+Hgt+" cm ｜ 體積 "+(L*Wd*Hgt)+" cm³",30,22,15,"#75cfff");
-    var progressStep=step>calc.divisors.length;
-    var subText=progressStep?"小正方體邊長 ＝ "+d+" cm ｜ 共切出 "+nx+"×"+ny+"×"+nz+" ＝ "+totalCubes+" 個":"短除法找三數最大公因數...";
-    drawText(subText,W-30,22,15,progressStep?"#62e7b3":"#ffd166","right");
+    var subText=isDone?"正方體邊長 ＝ "+d+" cm ｜ 共切出 "+nx+"×"+ny+"×"+nz+" ＝ "+totalCubes+" 個":(step===0?"【步驟 0】完整長方體木塊":"【步驟 "+step+"】進行 X, Y, Z 軸網格剖分...");
+    drawText(subText,W-30,22,15,isDone?"#62e7b3":"#ffd166","right");
 
-    // 繪製大長方體外框三面
-    var p000=isoProj(0,0,0,cx,cy,s), pX00=isoProj(nx,0,0,cx,cy,s), pXY0=isoProj(nx,ny,0,cx,cy,s), p0Y0=isoProj(0,ny,0,cx,cy,s);
     var p00Z=isoProj(0,0,nz,cx,cy,s), pX0Z=isoProj(nx,0,nz,cx,cy,s), pXYZ=isoProj(nx,ny,nz,cx,cy,s), p0YZ=isoProj(0,ny,nz,cx,cy,s);
+    var pX00=isoProj(nx,0,0,cx,cy,s), pXY0=isoProj(nx,ny,0,cx,cy,s), p0Y0=isoProj(0,ny,0,cx,cy,s);
 
-    drawIsoFace(p00Z,pX0Z,pXYZ,p0YZ,"#4077a8","#75cfff"); // 頂面
-    drawIsoFace(pX00,pXY0,pXYZ,pX0Z,"#28537a","#75cfff"); // 右面
-    drawIsoFace(p0Y0,pXY0,pXYZ,p0YZ,"#1d3e5e","#75cfff"); // 左側前表面
+    drawIsoFace(p00Z,pX0Z,pXYZ,p0YZ,"#4077a8","#75cfff");
+    drawIsoFace(pX00,pXY0,pXYZ,pX0Z,"#28537a","#75cfff");
+    drawIsoFace(p0Y0,pXY0,pXYZ,p0YZ,"#1d3e5e","#75cfff");
 
-    // 繪製格線切割
     if(step>0){
-      var animT=progressStep?t:0.4;
-      ctx.strokeStyle="rgba(255, 209, 102, "+(0.4+0.5*animT)+")";ctx.lineWidth=1;
-      // 頂面格線
+      // 繪製格線
+      ctx.strokeStyle="rgba(255, 209, 102, "+(isDone?0.9:0.4)+")";ctx.lineWidth=1;
       for(var x=1;x<nx;x++){
         var a=isoProj(x,0,nz,cx,cy,s),b=isoProj(x,ny,nz,cx,cy,s);
         ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
@@ -1009,33 +1070,38 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
         var a=isoProj(0,y,nz,cx,cy,s),b=isoProj(nx,y,nz,cx,cy,s);
         ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
       }
-      // 側面水平垂直格線
       for(var z=1;z<nz;z++){
         var a=isoProj(0,ny,z,cx,cy,s),b=isoProj(nx,ny,z,cx,cy,s);
         ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
       }
-      // 高亮頂角 1 個正方體
-      if(progressStep){
-        var c1=isoProj(0,0,nz,cx,cy,s), c2=isoProj(1,0,nz,cx,cy,s), c3=isoProj(1,1,nz,cx,cy,s), c4=isoProj(0,1,nz,cx,cy,s);
-        drawIsoFace(c1,c2,c3,c4,"rgba(255, 209, 102, 0.6)","#ffd166");
-        drawText("邊長 "+d+" cm",c3.x+10,c3.y-10,13,"#ffd166");
+
+      // 最終步驟：抽出最前角正方體外推展示
+      if(isDone){
+        var explodeD=15*t;
+        var exX=cx-explodeD*0.866, exY=cy-explodeD*0.5-explodeD*0.6;
+        var c1=isoProj(0,0,nz,exX,exY,s), c2=isoProj(1,0,nz,exX,exY,s), c3=isoProj(1,1,nz,exX,exY,s), c4=isoProj(0,1,nz,exX,exY,s);
+        var c5=isoProj(1,1,nz-1,exX,exY,s), c6=isoProj(0,1,nz-1,exX,exY,s), c7=isoProj(1,0,nz-1,exX,exY,s);
+        drawIsoFace(c1,c2,c3,c4,"#ffd166","#fff");
+        drawIsoFace(c4,c3,c5,c6,"#e0b343","#fff");
+        drawIsoFace(c2,c3,c5,c7,"#c99a2e","#fff");
+        drawText("單位小正方體 邊長 "+d+" cm",c3.x+12,c3.y-14,14,"#ffd166");
       }
     }
   }
 
-  // 4. 小長方體拼成大正方體
+  // 4. 小長方體拼成大正方體：逐層堆疊
   function drawWordBuildCube(t){
     var L=nums[0],Wd=nums[1],Hgt=nums[2],M=lcmAll(nums);
     var nx=M/L,ny=M/Wd,nz=M/Hgt,totalBlocks=nx*ny*nz;
     var cx=W/2,cy=H/2+25;
     var s=Math.min((W*0.35)/(nx+ny),(H*0.42)/(nz+(nx+ny)*0.5),24);
 
-    drawText("小積木 "+L+" × "+Wd+" × "+Hgt+" cm ｜ 需拼成正方體",30,22,15,"#75cfff");
-    var progressStep=step>calc.divisors.length;
-    var subText=progressStep?"大正方體邊長 ＝ "+M+" cm ｜ 最少需 "+nx+"×"+ny+"×"+nz+" ＝ "+totalBlocks+" 塊積木":"求長寬高之最小公倍數...";
-    drawText(subText,W-30,22,15,progressStep?"#62e7b3":"#ffd166","right");
+    var isDone=step>=total()-1;
+    drawText("小積木 "+L+" × "+Wd+" × "+Hgt+" cm ｜ 目標拼成正方體",30,22,15,"#75cfff");
+    var subText=isDone?"大正方體邊長 ＝ "+M+" cm ｜ 最少需 "+nx+"×"+ny+"×"+nz+" ＝ "+totalBlocks+" 塊積木":(step===0?"【步驟 0】單塊小長方體積木":"【步驟 "+step+"】向長寬高三維度倍增堆疊...");
+    drawText(subText,W-30,22,15,isDone?"#62e7b3":"#ffd166","right");
 
-    // 虛線繪製目標大正方體輪廓
+    // 虛線繪製目標大正方體外框
     ctx.setLineDash([4,4]);ctx.strokeStyle="rgba(117, 207, 255, 0.4)";ctx.lineWidth=1.5;
     var p00Z=isoProj(0,0,nz,cx,cy,s), pX0Z=isoProj(nx,0,nz,cx,cy,s), pXYZ=isoProj(nx,ny,nz,cx,cy,s), p0YZ=isoProj(0,ny,nz,cx,cy,s);
     var pX00=isoProj(nx,0,0,cx,cy,s), pXY0=isoProj(nx,ny,0,cx,cy,s), p0Y0=isoProj(0,ny,0,cx,cy,s);
@@ -1043,8 +1109,12 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     drawIsoFace(pX00,pXY0,pXYZ,pX0Z,null,"rgba(117, 207, 255, 0.5)");
     ctx.setLineDash([]);
 
-    // 堆疊小積木動畫
-    var maxDraw=progressStep?Math.max(1,Math.round(totalBlocks*t)):1;
+    // 依 step 決定已堆疊之積木數量
+    var maxDraw=1;
+    if(step===0)maxDraw=1;
+    else if(isDone)maxDraw=Math.round(totalBlocks*t);
+    else maxDraw=Math.max(1,Math.round(totalBlocks*(step/total())));
+
     var drawn=0;
     for(var z=0;z<nz&&drawn<maxDraw;z++){
       for(var y=0;y<ny&&drawn<maxDraw;y++){
@@ -1061,7 +1131,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     }
   }
 
-  // 5. 三人繞操場跑問題
+  // 5. 三人繞操場跑：每一步真實前進至具代表性時間點
   function drawWordTrackRun(t){
     var T1=nums[0],T2=nums[1],T3=nums[2],M=lcmAll(nums);
     var l1=M/T1,l2=M/T2,l3=M/T3;
@@ -1069,16 +1139,34 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     var tw=Math.min(W-100,440),th=Math.min(H-120,200);
     var R=th/2,sw=Math.max(30,tw-2*R);
 
-    // 時間推演：最後一步完成時 t 推進到 100%
-    var curT=(step>calc.divisors.length)?t:0.25;
-    var simSeconds=curT*M;
+    // 依 step 決定模擬秒數目標
+    var targetSec=0, phaseNote="";
+    if(step===0){
+      targetSec=0;
+      phaseNote="【起跑準備】三人於出發線就位 (0 秒)";
+    }else if(step===1){
+      targetSec=T1;
+      phaseNote="【經過 "+T1+" 秒】甲完成 1 圈回起點，但乙丙在其他位置！";
+    }else if(step<total()-1){
+      targetSec=Math.floor(M*0.5);
+      phaseNote="【經過 "+targetSec+" 秒】部分跑者抵達，但三人尚未全員相遇！";
+    }else{
+      targetSec=M;
+      phaseNote="【經過 "+M+" 秒】🎉 三人全員於起點同時相遇！";
+    }
+
+    var prevSec=0;
+    if(previousStep===0)prevSec=0;
+    else if(previousStep===1)prevSec=T1;
+    else if(previousStep<total()-1)prevSec=Math.floor(M*0.5);
+    else prevSec=M;
+
+    var curSec=prevSec+(targetSec-prevSec)*t;
 
     drawText("甲每圈 "+T1+"s ｜ 乙每圈 "+T2+"s ｜ 丙每圈 "+T3+"s",30,22,15,"#75cfff");
-    var progressStep=step>calc.divisors.length;
-    var subText=progressStep?"同時回到起點 ＝ "+M+" 秒 ｜ 甲 "+l1+" 圈、乙 "+l2+" 圈、丙 "+l3+" 圈":"短除法求三數最小公倍數...";
-    drawText(subText,W-30,22,15,progressStep?"#62e7b3":"#ffd166","right");
+    drawText(phaseNote,W-30,22,15,(step>=total()-1)?"#62e7b3":"#ffd166","right");
 
-    // 繪製操場跑道外圈與內圈
+    // 繪製操場跑道
     ctx.strokeStyle="#8c3e2e";ctx.lineWidth=34;ctx.lineCap="round";
     ctx.beginPath();
     ctx.moveTo(cx-sw/2,cy-R);ctx.lineTo(cx+sw/2,cy-R);
@@ -1087,14 +1175,13 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     ctx.arc(cx-sw/2,cy,R,Math.PI/2,-Math.PI/2);
     ctx.stroke();
 
-    // 跑道白色邊界線與起跑線
     ctx.strokeStyle="#fff";ctx.lineWidth=1.5;ctx.stroke();
     // 起跑線
     ctx.strokeStyle="#ffd166";ctx.lineWidth=4;
     ctx.beginPath();ctx.moveTo(cx,cy-R-17);ctx.lineTo(cx,cy-R+17);ctx.stroke();
     drawText("🏁 起點",cx,cy-R-26,12,"#ffd166","center");
 
-    // 跑道內草地
+    // 草地
     ctx.fillStyle="#1b4d3e";
     ctx.beginPath();
     ctx.moveTo(cx-sw/2,cy-R+17);ctx.lineTo(cx+sw/2,cy-R+17);
@@ -1103,9 +1190,8 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     ctx.arc(cx-sw/2,cy,R-17,Math.PI/2,-Math.PI/2);
     ctx.fill();
     drawText("400m 操場",cx,cy-5,15,"rgba(255,255,255,0.4)","center");
-    drawText("經過時間: "+Math.floor(simSeconds)+" / "+M+" 秒",cx,cy+18,14,"#ffd166","center");
+    drawText("經過時間: "+Math.floor(curSec)+" / "+M+" 秒",cx,cy+18,14,"#ffd166","center");
 
-    // 取得跑者座標函數
     function getPos(laps,trackR){
       var frac=(laps%1+1)%1;
       var P=2*sw+2*Math.PI*trackR;
@@ -1124,8 +1210,12 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       return {x:cx-hSw+(d-(hSw+2*Math.PI*trackR+sw)),y:cy-trackR};
     }
 
-    var r1=getPos(simSeconds/T1,R+8), r2=getPos(simSeconds/T2,R), r3=getPos(simSeconds/T3,R-8);
-    var runners=[{pos:r1,name:"甲",color:"#75cfff"},{pos:r2,name:"乙",color:"#62e7b3"},{pos:r3,name:"丙",color:"#ff9fc7"}];
+    var r1=getPos(curSec/T1,R+8), r2=getPos(curSec/T2,R), r3=getPos(curSec/T3,R-8);
+    var runners=[
+      {pos:r1,name:"甲",laps:(curSec/T1).toFixed(1),color:"#75cfff"},
+      {pos:r2,name:"乙",laps:(curSec/T2).toFixed(1),color:"#62e7b3"},
+      {pos:r3,name:"丙",laps:(curSec/T3).toFixed(1),color:"#ff9fc7"}
+    ];
     runners.forEach(function(r){
       ctx.beginPath();ctx.arc(r.pos.x,r.pos.y,8,0,Math.PI*2);
       ctx.fillStyle=r.color;ctx.fill();
@@ -1133,25 +1223,41 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       drawText(r.name,r.pos.x,r.pos.y,10,"#081321","center");
     });
 
-    if(progressStep && curT>0.98){
-      drawText("🎉 三人在起點同時相遇！",cx,cy+th/2+32,16,"#ffd166","center");
-    }
+    drawText("甲: "+(curSec/T1).toFixed(1)+" 圈  |  乙: "+(curSec/T2).toFixed(1)+" 圈  |  丙: "+(curSec/T3).toFixed(1)+" 圈",cx,cy+th/2+32,13,"#d0e3f7","center");
   }
 
-  // 6. 多人週期輪流值班問題
+  // 6. 多人週期輪流值班問題：掃描時間指針逐日推進
   function drawWordShiftWork(t){
     var D1=nums[0],D2=nums[1],D3=nums[2],M=lcmAll(nums);
     var left=75,right=W-45,usable=right-left;
     var rowH=42,startY=65;
 
+    var targetDay=0, phaseNote="";
+    if(step===0){
+      targetDay=0;
+      phaseNote="【第 0 天】今天三人恰好同一天值班";
+    }else if(step===1){
+      targetDay=2*D1;
+      phaseNote="【第 "+targetDay+" 天】甲與丙偶合，但乙未值班";
+    }else if(step<total()-1){
+      targetDay=Math.floor(M*0.5);
+      phaseNote="【第 "+targetDay+" 天】週期尚未完全同步";
+    }else{
+      targetDay=M;
+      phaseNote="【第 "+M+" 天】🎉 三人值班日再次完全重合！";
+    }
+
+    var prevDay=0;
+    if(previousStep===0)prevDay=0;
+    else if(previousStep===1)prevDay=2*D1;
+    else if(previousStep<total()-1)prevDay=Math.floor(M*0.5);
+    else prevDay=M;
+
+    var curDay=prevDay+(targetDay-prevDay)*t;
+
     drawText("甲每 "+D1+" 天 ｜ 乙每 "+D2+" 天 ｜ 丙每 "+D3+" 天 輪值",left,22,15,"#75cfff");
-    var progressStep=step>calc.divisors.length;
-    var subText=progressStep?"同時值班 ＝ 第 "+M+" 天後 ｜ 甲值 "+(M/D1)+" 次、乙 "+(M/D2)+" 次、丙 "+(M/D3)+" 次":"求值班週期最小公倍數...";
-    drawText(subText,right,22,15,progressStep?"#62e7b3":"#ffd166","right");
+    drawText(phaseNote,right,22,15,(step>=total()-1)?"#62e7b3":"#ffd166","right");
 
-    var curDay=(progressStep?t:0.3)*M;
-
-    // 繪製三天軌道
     var people=[{name:"甲醫師",cycle:D1,color:"#75cfff"},{name:"乙醫師",cycle:D2,color:"#62e7b3"},{name:"丙醫師",cycle:D3,color:"#ff9fc7"}];
     people.forEach(function(p,idx){
       var y=startY+idx*rowH;
@@ -1159,7 +1265,6 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       ctx.strokeStyle="#243d5c";ctx.lineWidth=2;
       ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();
 
-      // 繪製各值班天數圓點
       for(var day=0;day<=M;day+=p.cycle){
         var x=left+usable*(day/M);
         var active=day<=curDay;
@@ -1171,19 +1276,17 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       }
     });
 
-    // 時間軸刻度
     var axisY=startY+people.length*rowH+5;
     ctx.strokeStyle="#5a7a9f";ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(left,axisY);ctx.lineTo(right,axisY);ctx.stroke();
     drawText("第 0 天",left,axisY+14,11,"#b8c9df","center");
     drawText("第 "+M+" 天",right,axisY+14,11,"#ffd166","center");
 
-    // 垂直掃描時間指針
     var scanX=left+usable*(curDay/M);
     ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(scanX,startY-15);ctx.lineTo(scanX,axisY+8);ctx.stroke();
 
-    if(progressStep && t>0.98){
+    if(step>=total()-1 && t>0.9){
       ctx.fillStyle="rgba(255, 209, 102, 0.15)";
       ctx.fillRect(right-15,startY-20,30,people.length*rowH+35);
       drawText("🎉 第 "+M+" 天三人再次一同值班！",left+usable/2,axisY+38,15,"#ffd166","center");
@@ -1290,7 +1393,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     if(!ctx)return;
     if(raf!==null)cancelAnimationFrame(raf);
     function frame(now){
-      var duration=(questionType==="word"&&currentScenario==="trackRun")?2500:1200;
+      var duration=(questionType==="word"&&currentScenario==="trackRun")?1800:1000;
       var raw=Math.max(0,Math.min(1,(now-start)/duration)),t=1-Math.pow(1-raw,3);
       ctx.clearRect(0,0,W,H);
       if(questionType==="word"){
@@ -1332,7 +1435,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     if(timer!==null){stop();return}
     if(step===total())go(0);
     $("auto").textContent="⏸ 暫停";
-    timer=setInterval(function(){if(step>=total()){stop();return}go(step+1);if(step>=total())stop()},3000);
+    timer=setInterval(function(){if(step>=total()){stop();return}go(step+1);if(step>=total())stop()},3200);
   };
   $("examples").onchange=function(e){
     if(e.target.value!=="")preset(examples[questionType][Number(e.target.value)].values);
