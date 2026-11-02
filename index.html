@@ -1611,7 +1611,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
         chipText="最少 "+genSol.targetN+" 個";
       }
       $("visualChip").innerHTML=chipText;
-      $("visualNote").textContent="請按「下一步 ▶」逐步觀察短除法分解與動態圖像、即時算式膠囊之 1:1 精準對應！";
+      $("visualNote").textContent="請按「下一步 ▶」逐步觀察短除法分解與動態視覺、規律表徵之 1:1 精準對應！";
     }else{
       var size=product(calc.divisors.slice(0,Math.min(step,calc.divisors.length)));
       $("visualHeading").textContent=mode==="gcd"?"④ 方格動態":"④ 長度動態";
@@ -1651,39 +1651,105 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     ctx.textAlign=align||"left";ctx.textBaseline="middle";ctx.fillText(str,x,y);
   }
 
-  // ================= 應用問題通用商數對照卡 =================
-  function drawQuotientHelperCard(x, y, w, h, title, items, note){
+  // ================= 應用問題純視覺動態工具群 (Motion Design Helpers) =================
+  function easeEnter(t){
+    var c = Math.max(0, Math.min(1, t));
+    return 1 - Math.pow(1 - c, 4);
+  }
+  function easeMove(t){
+    var c = Math.max(0, Math.min(1, t));
+    return c < 0.5 ? 2*c*c : 1 - Math.pow(-2*c + 2, 2)/2;
+  }
+  function easeBackOut(t, s){
+    s = s !== undefined ? s : 1.7;
+    var c = Math.max(0, Math.min(1, t)) - 1;
+    return 1 + (s + 1)*c*c*c + s*c*c;
+  }
+  function stagger(t, index, total, overlap){
+    overlap = overlap !== undefined ? overlap : 0.6;
+    if(total <= 1) return easeBackOut(t);
+    var seg = (1 - overlap) / Math.max(1, total - 1);
+    var startTime = index * seg;
+    var progress = (t - startTime) / overlap;
+    return easeBackOut(Math.max(0, Math.min(1, progress)));
+  }
+
+  // 頂部極簡單行標籤（保證零折行、零重疊、邊距 >= 24px）
+  function drawTopBadge(leftText, rightText, rightColor){
     ctx.save();
-    ctx.fillStyle="rgba(8, 22, 40, 0.94)";
-    ctx.strokeStyle="rgba(98, 231, 179, 0.75)";
-    ctx.lineWidth=1.5;
-    ctx.beginPath();
-    if(ctx.roundRect){ ctx.roundRect(x,y,w,h,8); }
-    else{ ctx.rect(x,y,w,h); }
-    ctx.fill();ctx.stroke();
-
-    // Title badge
-    ctx.fillStyle="rgba(98, 231, 179, 0.2)";
-    ctx.strokeStyle="#62e7b3";ctx.lineWidth=1;
-    ctx.beginPath();
-    if(ctx.roundRect){ ctx.roundRect(x+6,y+6,w-12,20,4); }
-    else{ ctx.rect(x+6,y+6,w-12,20); }
-    ctx.fill();ctx.stroke();
-    drawText(title,x+w/2,y+16,11,"#62e7b3","center");
-
-    // Items
-    var curY=y+36;
-    for(var i=0;i<items.length;i++){
-      var it=items[i];
-      drawText(it.label,x+10,curY,11,"#b8c9df","left");
-      drawText(it.val,x+w-10,curY,12,it.color||"#ffd166","right");
-      curY+=18;
+    var y = 20;
+    var pad = 24;
+    if(leftText){
+      ctx.fillStyle = "#75cfff";
+      ctx.font = "700 13px sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(leftText, pad, y);
     }
+    if(rightText){
+      ctx.fillStyle = rightColor || "#ffd166";
+      ctx.font = "700 13px sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText(rightText, W - pad, y);
+    }
+    ctx.restore();
+  }
 
-    if(note){
-      ctx.fillStyle="rgba(255, 209, 102, 0.12)";
-      ctx.fillRect(x+6,y+h-20,w-12,15);
-      drawText(note,x+w/2,y+h-12,9,"#ffd166","center");
+  // 發光圓角徽章（置中或固定位置）
+  function drawGlowPill(text, cx, cy, fgColor, bgColor, borderColor){
+    ctx.save();
+    ctx.font = "700 13px sans-serif";
+    var m = ctx.measureText(text);
+    var pw = m.width + 24, ph = 28;
+    ctx.fillStyle = bgColor || "rgba(8, 22, 40, 0.92)";
+    ctx.strokeStyle = borderColor || fgColor || "#ffd166";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(cx - pw/2, cy - ph/2, pw, ph, ph/2);
+    else ctx.rect(cx - pw/2, cy - ph/2, pw, ph);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = fgColor || "#ffd166";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, cx, cy);
+    ctx.restore();
+  }
+
+  // 3D 等角投影輔助函式
+  function isoProj(x,y,z,cx,cy,s){
+    var cos30=0.866025,sin30=0.5;
+    return {x:cx+(x-y)*cos30*s, y:cy+(x+y)*sin30*s-z*s};
+  }
+  function drawIsoFace(p1,p2,p3,p4,fill,stroke){
+    ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);
+    ctx.lineTo(p3.x,p3.y);ctx.lineTo(p4.x,p4.y);ctx.closePath();
+    if(fill){ctx.fillStyle=fill;ctx.fill()}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke()}
+  }
+
+  // 士兵繪圖小工具
+  function drawSoldier(x,y,radius,color,isGhost,label){
+    ctx.save();
+    if(isGhost){
+      ctx.setLineDash([3,3]);
+      ctx.strokeStyle=color||"#ffd166";
+      ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);
+      ctx.stroke();
+      if(label){
+        drawText(label,x,y,Math.max(9,radius),"#ffd166","center");
+      }
+    }else{
+      ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);
+      ctx.fillStyle=color||"#75cfff";ctx.fill();
+      ctx.strokeStyle="#081321";ctx.lineWidth=1.2;ctx.stroke();
+      ctx.fillStyle="rgba(255,255,255,0.45)";
+      ctx.beginPath();ctx.arc(x-radius*0.25,y-radius*0.25,radius*0.35,0,Math.PI*2);ctx.fill();
+      if(label){
+        drawText(label,x,y,Math.max(8,radius*0.85),"#081321","center");
+      }
     }
     ctx.restore();
   }
@@ -1701,98 +1767,133 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     else if(currentScenario==="hanXinSameRem")drawWordHanXinSameRem(t);
     else if(currentScenario==="hanXinSameDeficit")drawWordHanXinSameDeficit(t);
     else if(currentScenario==="hanXinGeneral")drawWordHanXinGeneral(t);
-
-    // 繪製全情境通用之「即時算式對照橫幅 (Live Formula HUD)」
-    drawLiveFormulaHUD();
     ctx.restore();
   }
 
-  // 1. 長方形切成最大正方形：每一步短除法，網格逐層剖分
+  // 1. 裁切最大正方形（GCD）：純幾何雷射切割與單元彈跳
   function drawWordCutSquare(t){
     var L=nums[0],Wd=nums[1],d=gcd(L,Wd);
-    var finalNx=L/d,finalNy=Wd/d,totalBlocks=finalNx*finalNy;
+    var qL=Math.floor(L/d),qW=Math.floor(Wd/d),totalBlocks=qL*qW;
     var dLen=calc.divisors.length;
-    var pad=40,topPad=50;
-    var maxW=W-2*pad,maxH=H-pad-topPad-42;
-    var scale=Math.min(maxW/L,maxH/Wd);
+    var topY=68, btmPad=36;
+    var availW=W-120,availH=H-topY-btmPad;
+    var scale=Math.min(availW/L,availH/Wd);
     var rectW=L*scale,rectH=Wd*scale;
-    var x0=(W-rectW)/2,y0=topPad+(maxH-rectH)/2;
-
-    var curDivisor=1;
-    if(step===0){curDivisor=1;}
-    else if(step<=dLen){
-      curDivisor=product(calc.divisors.slice(0,step));
-    }else{
-      curDivisor=d;
-    }
-
-    var stepNx=L/curDivisor, stepNy=Wd/curDivisor;
+    var x0=(W-rectW)/2,y0=topY+(availH-rectH)/2;
     var isDone=step>=total()-1;
 
-    drawText("長 "+L+" cm × 寬 "+Wd+" cm ｜ 步驟 "+step+"："+(step===0?"完整未切割紙板":(isDone?"切割完成！邊長 "+d+" cm":"同除以公因數，細分網格")),pad,22,14,"#75cfff");
-    var subText=isDone?"正方形邊長 ＝ "+d+" cm ｜ 共 "+finalNx+" × "+finalNy+" ＝ "+totalBlocks+" 塊":"目前均分單位："+curDivisor+" cm";
-    drawText(subText,W-pad,22,14,isDone?"#62e7b3":"#ffd166","right");
+    var rightTag=step===0?"試鋪正方形探針":(isDone?"最大正方形 "+d+" cm × "+d+" cm ｜ 共 "+totalBlocks+" 塊":"短除法等分切割中");
+    drawTopBadge("長 "+L+" cm × 寬 "+Wd+" cm", rightTag, isDone?"#62e7b3":"#ffd166");
 
     // 底板長方形
     ctx.fillStyle="#10253f";ctx.fillRect(x0,y0,rectW,rectH);
-    ctx.strokeStyle="#75cfff";ctx.lineWidth=2;ctx.strokeRect(x0,y0,rectW,rectH);
+    ctx.strokeStyle="#3b6998";ctx.lineWidth=2;ctx.strokeRect(x0,y0,rectW,rectH);
 
-    drawText(L+" cm",x0+rectW/2,y0-14,14,"#f3f7ff","center");
-    drawText(Wd+" cm",x0-14,y0+rectH/2,14,"#f3f7ff","right");
+    // 邊長尺寸標示（x0 >= 60，左邊留有充裕空間，絕不被裁切）
+    drawText(L+" cm",x0+rectW/2,y0-12,13,"#75cfff","center");
+    drawText(Wd+" cm",x0-12,y0+rectH/2,13,"#75cfff","right");
+
+    var now=performance.now();
+    var pulse=Math.sin(now*0.004);
 
     if(step===0){
-      ctx.setLineDash([4,4]);ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
-      var qSz=Math.min(rectW/3,rectH/2);
-      ctx.strokeRect(x0,y0,qSz,qSz);
-      ctx.setLineDash([]);
-      drawText("? cm",x0+qSz/2,y0+qSz/2,14,"#ffd166","center");
-      drawText("要剪成最大正方形...",x0+rectW/2,y0+rectH/2,16,"rgba(255,209,102,0.6)","center");
+      var probeSize=Math.min(rectW*0.48,rectH*0.75)*(0.95+0.05*pulse);
+      ctx.save();
+      ctx.fillStyle="rgba(255, 209, 102, 0.18)";
+      ctx.fillRect(x0,y0,probeSize,probeSize);
+      ctx.setLineDash([5,5]);ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
+      ctx.strokeRect(x0,y0,probeSize,probeSize);
+
+      ctx.fillStyle="rgba(255, 143, 167, 0.12)";
+      ctx.fillRect(x0+probeSize,y0,rectW-probeSize,probeSize);
+      ctx.strokeStyle="rgba(255, 143, 167, 0.5)";
+      ctx.strokeRect(x0+probeSize,y0,rectW-probeSize,probeSize);
+      drawText("殘邊 ❌",x0+(probeSize+rectW)/2,y0+probeSize/2,11,"#ff8fa7","center");
+      ctx.restore();
+      drawText("? cm",x0+probeSize/2,y0+probeSize/2,16,"#ffd166","center");
+    }else if(step<=dLen){
+      var curDivisor=product(calc.divisors.slice(0,step));
+      var nx=Math.round(L/curDivisor),ny=Math.round(Wd/curDivisor);
+      var cellW=rectW/nx,cellH=rectH/ny;
+      var sweep=easeEnter(t);
+
+      ctx.save();
+      ctx.strokeStyle="rgba(255, 209, 102, 0.85)";ctx.lineWidth=1.5;
+      for(var c=1;c<nx;c++){
+        var lx=x0+c*cellW;
+        ctx.beginPath();ctx.moveTo(lx,y0);ctx.lineTo(lx,y0+rectH*sweep);ctx.stroke();
+      }
+      for(var r=1;r<ny;r++){
+        var ly=y0+r*cellH;
+        ctx.beginPath();ctx.moveTo(x0,ly);ctx.lineTo(x0+rectW*sweep,ly);ctx.stroke();
+      }
+      ctx.restore();
+
+      ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
+      ctx.strokeRect(x0,y0,cellW,cellH);
+      drawText(curDivisor+" cm",x0+cellW/2,y0+cellH/2,Math.min(13,cellH*0.4),"#ffd166","center");
     }else{
-      var nx=Math.round(stepNx), ny=Math.round(stepNy);
-      var cellW=rectW/nx, cellH=rectH/ny;
+      var cellW=rectW/qL,cellH=rectH/qW;
 
-      ctx.fillStyle="rgba(98, 231, 179, 0.14)";
-      ctx.strokeStyle="rgba(255, 209, 102, 0.85)";
-      ctx.lineWidth=isDone?2:1.2;
+      ctx.strokeStyle="rgba(98, 231, 179, 0.4)";ctx.lineWidth=1;
+      for(var c=0;c<=qL;c++){
+        var lx=x0+c*cellW;
+        ctx.beginPath();ctx.moveTo(lx,y0);ctx.lineTo(lx,y0+rectH);ctx.stroke();
+      }
+      for(var r=0;r<=qW;r++){
+        var ly=y0+r*cellH;
+        ctx.beginPath();ctx.moveTo(x0,ly);ctx.lineTo(x0+rectW,ly);ctx.stroke();
+      }
 
-      for(var r=0;r<ny;r++){
-        for(var c=0;c<nx;c++){
-          var cx=x0+c*cellW,cy=y0+r*cellH;
-          if((c+r)%2===0)ctx.fillRect(cx,cy,cellW,cellH);
-          ctx.strokeRect(cx,cy,cellW,cellH);
-          if(isDone && totalBlocks<=64){
-            var idx=r*nx+c+1;
-            drawText(String(idx),cx+cellW/2,cy+cellH/2,Math.min(15,cellH*0.42),"#ffd166","center");
+      if(step===dLen+1){
+        var pop=easeBackOut(t,2.0);
+        var popW=cellW*(1+0.12*pop),popH=cellH*(1+0.12*pop);
+        var glow=0.3+0.2*pulse;
+        ctx.save();
+        ctx.fillStyle="rgba(255, 209, 102, "+(0.35+glow)+")";
+        ctx.shadowColor="#ffd166";ctx.shadowBlur=12*pop;
+        ctx.fillRect(x0-2,y0-2,popW+4,popH+4);
+        ctx.strokeStyle="#ffd166";ctx.lineWidth=2.5;
+        ctx.strokeRect(x0-2,y0-2,popW+4,popH+4);
+        ctx.restore();
+        drawText(d+"×"+d,x0+cellW/2,y0+cellH/2,Math.min(14,cellH*0.45),"#ffd166","center");
+      }else if(step===dLen+2){
+        for(var c=0;c<qL;c++){
+          var pVal=stagger(t,c,qL,0.6);
+          var cx=x0+(c+0.5)*cellW,cy=y0-12;
+          ctx.beginPath();ctx.arc(cx,cy,5*pVal,0,Math.PI*2);
+          ctx.fillStyle="#62e7b3";ctx.fill();
+        }
+        for(var r=0;r<qW;r++){
+          var pVal=stagger(t,r,qW,0.6);
+          var cx=x0-12,cy=y0+(r+0.5)*cellH;
+          ctx.beginPath();ctx.arc(cx,cy,5*pVal,0,Math.PI*2);
+          ctx.fillStyle="#75cfff";ctx.fill();
+        }
+        drawText("÷"+d+" ➔ "+qL+" 段",x0+rectW/2,y0-24,13,"#62e7b3","center");
+        drawText("÷"+d+" ➔ "+qW+" 段",x0-24,y0+rectH/2,13,"#75cfff","right");
+      }else{
+        for(var r=0;r<qW;r++){
+          for(var c=0;c<qL;c++){
+            var idx=r*qL+c+1;
+            var sVal=stagger(t,idx-1,totalBlocks,0.7);
+            var cx=x0+c*cellW,cy=y0+r*cellH;
+            ctx.fillStyle="rgba(98, 231, 179, "+(0.12*sVal)+")";
+            ctx.fillRect(cx,cy,cellW,cellH);
+            if(totalBlocks<=64&&sVal>0.2){
+              drawText(String(idx),cx+cellW/2,cy+cellH/2,Math.min(12,cellH*0.45),"#ffd166","center");
+            }
           }
         }
-      }
-
-      ctx.strokeStyle="#ffd166";ctx.lineWidth=3;
-      ctx.strokeRect(x0,y0,cellW,cellH);
-      drawText((step>dLen?d:curDivisor)+" cm",x0+cellW/2,y0+cellH+14,13,"#ffd166","center");
-
-      if(step===dLen+2){
-        ctx.strokeStyle="#62e7b3";ctx.lineWidth=2;
-        ctx.beginPath();ctx.moveTo(x0,y0-6);ctx.lineTo(x0+rectW,y0-6);ctx.stroke();
-        drawText("長："+L+" ÷ "+d+" ＝ "+finalNx+" 段（短除底商）",x0+rectW/2,y0-24,13,"#62e7b3","center");
-
-        ctx.beginPath();ctx.moveTo(x0+rectW+6,y0);ctx.lineTo(x0+rectW+6,y0+rectH);ctx.stroke();
-        drawText("寬："+Wd+" ÷ "+d+" ＝ "+finalNy+" 段（短除底商）",x0+rectW+16,y0+rectH/2,13,"#62e7b3","left");
-      }
-
-      // 右上角：短除法底層商數直覺對照卡
-      if(step>=dLen+1){
-        var items=[
-          {label:"長邊段數（底商 1）",val:finalNx+" 段",color:"#75cfff"},
-          {label:"寬邊段數（底商 2）",val:finalNy+" 段",color:"#62e7b3"},
-          {label:"裁切總塊數",val:totalBlocks+" 塊",color:"#ffd166"}
-        ];
-        drawQuotientHelperCard(W-215,topPad+6,185,96,"💡 短除法底商直出段數",items,"✨ 無需重算除法！底商直接是段數");
+        var badgeScale=easeBackOut(t,1.8);
+        if(badgeScale>0.1){
+          drawGlowPill(qL+" × "+qW+" ＝ "+totalBlocks+" 塊",x0+rectW/2,y0+rectH/2,"#081321","rgba(255, 209, 102, 0.95)","#ffd166");
+        }
       }
     }
   }
 
-  // 2. 【課本進階範例 11】長方形瓷磚拼最大正方形（含塊數上限）
+  // 2. 長方形瓷磚拼正方形（含上限 k² 放大）
   function drawWordTileSquareMax(t){
     var L=nums[0],Wd=nums[1],lim=(currentWordVals&&currentWordVals[2]!==undefined)?currentWordVals[2]:310;
     var M=lcmAll(nums);
@@ -1800,542 +1901,484 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     var dLen=calc.divisors.length;
     var k=Math.max(1,Math.floor(Math.sqrt(lim/baseBlocks)));
     var usedBlocks=baseBlocks*k*k,leftover=lim-usedBlocks,maxSide=M*k;
-
-    var pad=30,topPad=45;
     var isDone=step>=total()-1;
 
-    drawText("長 "+L+" cm × 寬 "+Wd+" cm 瓷磚 ｜ 上限 "+lim+" 塊 ｜ 拼成最大正方形",pad,22,14,"#75cfff");
-    var subText=isDone?"最大正方形邊長 ＝ "+maxSide+" cm ｜ 剩餘 "+leftover+" 塊":(step===0?"【步驟 0】單塊瓷磚與正方形拼湊目標":"【步驟 "+step+"】短除法求最小單位正方形邊長...");
-    drawText(subText,W-pad,22,14,isDone?"#62e7b3":"#ffd166","right");
+    var rightTag=isDone?"最大邊長 "+maxSide+" cm ｜ 剩餘 "+leftover+" 塊":(step===0?"單塊瓷磚比對":"求最小正方形 LCM");
+    drawTopBadge("瓷磚 "+L+"×"+Wd+" cm ｜ 上限 "+lim+" 塊", rightTag, isDone?"#62e7b3":"#ffd166");
 
-    var startY=topPad+12;
+    var now=performance.now();
+    var pulse=Math.sin(now*0.004);
 
     if(step===0){
-      // Step 0: Single tile and dashed square
-      var tileBoxW=120,tileBoxH=90;
-      var cx=pad+100,cy=startY+100;
-      ctx.fillStyle="#10253f";ctx.strokeStyle="#75cfff";ctx.lineWidth=2;
-      ctx.fillRect(cx-tileBoxW/2,cy-tileBoxH/2,tileBoxW,tileBoxH);
-      ctx.strokeRect(cx-tileBoxW/2,cy-tileBoxH/2,tileBoxW,tileBoxH);
-      drawText("單塊瓷磚",cx,cy-12,14,"#ffd166","center");
-      drawText(L+" cm × "+Wd+" cm",cx,cy+12,13,"#f3f7ff","center");
+      var tw=100,th=75;
+      var cx1=W*0.3,cy1=H/2;
+      ctx.fillStyle="#10253f";ctx.fillRect(cx1-tw/2,cy1-th/2,tw,th);
+      ctx.strokeStyle="#75cfff";ctx.lineWidth=2;ctx.strokeRect(cx1-tw/2,cy1-th/2,tw,th);
+      drawText(L+"×"+Wd,cx1,cy1,15,"#ffd166","center");
 
-      // Goal target dashed box
-      var sqSize=150,sqX=W-pad-sqSize-80,sqY=startY+25;
+      var sqSz=140,cx2=W*0.7,cy2=H/2;
+      ctx.save();
       ctx.setLineDash([5,5]);ctx.strokeStyle="#62e7b3";ctx.lineWidth=2;
-      ctx.strokeRect(sqX,sqY,sqSize,sqSize);
-      ctx.setLineDash([]);
-      drawText("拼出最大正方形？",sqX+sqSize/2,sqY+sqSize/2-10,15,"#62e7b3","center");
-      drawText("邊長為 "+L+" 與 "+Wd+" 之公倍數",sqX+sqSize/2,sqY+sqSize/2+14,12,"#b8c9df","center");
+      ctx.strokeRect(cx2-sqSz/2,cy2-sqSz/2,sqSz,sqSz);
+      ctx.restore();
+      drawText("正方形？",cx2,cy2,16,"#62e7b3","center");
 
-      // Arrow in middle
-      ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(cx+tileBoxW/2+20,cy);ctx.lineTo(sqX-20,cy);ctx.stroke();
-      drawText("平鋪拼湊", (cx+tileBoxW/2+sqX)/2, cy-12, 12, "#ffd166", "center");
+      var arrX=W*0.5+10*pulse;
+      drawText("➔",arrX,cy1,22,"#ffd166","center");
     }else if(step<=dLen){
-      var prog=step/dLen;
-      drawText("短除法求最小公倍數 LCM("+L+", "+Wd+") ＝ "+M+" cm",W/2,startY+35,16,"#75cfff","center");
-      drawText("基本單位正方形邊長為 "+M+" 公分",W/2,startY+70,14,"#62e7b3","center");
+      var maxSz=Math.min(W*0.4,H*0.5);
+      var bx=W/2-maxSz/2,by=H/2-maxSz/2+10;
+      ctx.fillStyle="#10253f";ctx.fillRect(bx,by,maxSz,maxSz);
+      ctx.strokeStyle="rgba(117, 207, 255, 0.4)";ctx.lineWidth=1.5;ctx.strokeRect(bx,by,maxSz,maxSz);
+
+      var p=easeEnter(t);
+      var cellW=maxSz/qL,cellH=maxSz/qW;
+      for(var c=0;c<qL*p;c++){
+        ctx.fillStyle="rgba(117, 207, 255, 0.25)";
+        ctx.fillRect(bx+c*cellW,by,cellW,cellH);
+        ctx.strokeStyle="#75cfff";ctx.strokeRect(bx+c*cellW,by,cellW,cellH);
+      }
+      for(var r=0;r<qW*p;r++){
+        ctx.fillStyle="rgba(98, 231, 179, 0.25)";
+        ctx.fillRect(bx,by+r*cellH,cellW,cellH);
+        ctx.strokeStyle="#62e7b3";ctx.strokeRect(bx,by+r*cellH,cellW,cellH);
+      }
+      drawText(M+" cm",bx+maxSz/2,by-14,13,"#ffd166","center");
+      drawText(M+" cm",bx-14,by+maxSz/2,13,"#ffd166","right");
     }else if(step===dLen+1){
-      // Step dLen + 1: Base square (qL x qW tiles)
-      var maxDrawW=Math.min(W*0.42,210),maxDrawH=Math.min(H-startY-70,210);
-      var bScale=Math.min(maxDrawW/M,maxDrawH/M);
-      var sqPix=M*bScale;
-      var sqX=pad+40,sqY=startY+(H-startY-70-sqPix)/2;
+      var maxSz=Math.min(W*0.42,H*0.5);
+      var bx=(W-maxSz)/2,by=(H-maxSz)/2+10;
+      ctx.fillStyle="#10253f";ctx.fillRect(bx,by,maxSz,maxSz);
+      ctx.strokeStyle="#ffd166";ctx.lineWidth=2.5;ctx.strokeRect(bx,by,maxSz,maxSz);
 
-      ctx.fillStyle="#10253f";ctx.fillRect(sqX,sqY,sqPix,sqPix);
-      ctx.strokeStyle="#ffd166";ctx.lineWidth=2;ctx.strokeRect(sqX,sqY,sqPix,sqPix);
-
-      var tilePixW=sqPix/qL,tilePixH=sqPix/qW;
+      var cellW=maxSz/qL,cellH=maxSz/qW;
       for(var r=0;r<qW;r++){
         for(var c=0;c<qL;c++){
-          var tx=sqX+c*tilePixW,ty=sqY+r*tilePixH;
-          var hue=(c*45+r*65)%360;
-          ctx.fillStyle="hsla("+hue+", 60%, 50%, 0.35)";
-          ctx.strokeStyle="#75cfff";ctx.lineWidth=1;
-          ctx.fillRect(tx,ty,tilePixW,tilePixH);ctx.strokeRect(tx,ty,tilePixW,tilePixH);
-          var bIdx=r*qL+c+1;
-          drawText(String(bIdx),tx+tilePixW/2,ty+tilePixH/2,11,"#f3f7ff","center");
+          var tx=bx+c*cellW,ty=by+r*cellH;
+          ctx.fillStyle="rgba(117, 207, 255, 0.22)";
+          ctx.fillRect(tx,ty,cellW,cellH);
+          ctx.strokeStyle="rgba(255, 209, 102, 0.6)";ctx.strokeRect(tx,ty,cellW,cellH);
         }
       }
-      drawText("基本正方形邊長 ＝ "+M+" cm",sqX+sqPix/2,sqY-12,13,"#ffd166","center");
-      drawText("橫排 "+qL+" 塊",sqX+sqPix/2,sqY+sqPix+14,12,"#75cfff","center");
-      drawText("直排 "+qW+" 塊",sqX-12,sqY+sqPix/2,12,"#75cfff","right");
-
-      // Right explanation card
-      var cardX=sqX+sqPix+40,cardW=W-cardX-pad;
-      drawQuotientHelperCard(cardX,sqY,cardW,sqPix,"💡 第 1 小題：最小單位正方形", [
-        {label:"基本邊長 LCM("+L+","+Wd+")",val:M+" cm",color:"#ffd166"},
-        {label:"橫排需（"+M+"÷"+L+"）",val:qL+" 塊",color:"#75cfff"},
-        {label:"直排需（"+M+"÷"+Wd+"）",val:qW+" 塊",color:"#62e7b3"},
-        {label:"1 個基本正方形共需",val:baseBlocks+" 塊瓷磚",color:"#ffd166"}
-      ],"✨ 1 個基本單位正方形需要 "+baseBlocks+" 塊瓷磚");
-    }else if(step===dLen+2){
-      // Step dLen + 2: k^2 quadratic scaling demonstration!
-      drawText("💡 核心突破：邊長放大 k 倍 ⟹ 需 k × k ＝ k² 個基本正方形 ＝ "+baseBlocks+" × k² 塊瓷磚",pad,startY+14,14,"#ffd166");
-      var kCases=[
-        {k:1,blocks:baseBlocks*1,ok:true},
-        {k:2,blocks:baseBlocks*4,ok:true},
-        {k:3,blocks:baseBlocks*9,ok:true},
-        {k:4,blocks:baseBlocks*16,ok:true},
-        {k:k,blocks:usedBlocks,ok:true,best:true},
-        {k:k+1,blocks:baseBlocks*(k+1)*(k+1),ok:false}
-      ];
-      var cardW=Math.min(95,(W-2*pad-40)/kCases.length);
-      kCases.forEach(function(c,i){
-        var cx=pad+i*(cardW+8),cy=startY+42;
-        ctx.fillStyle=c.best?"rgba(98, 231, 179, 0.22)":(c.ok?"#10253f":"rgba(255, 143, 167, 0.15)");
-        ctx.strokeStyle=c.best?"#62e7b3":(c.ok?"#3b5575":"#ff8fa7");
-        ctx.lineWidth=c.best?2.5:1;
-        ctx.fillRect(cx,cy,cardW,100);ctx.strokeRect(cx,cy,cardW,100);
-
-        drawText("k ＝ "+c.k,cx+cardW/2,cy+18,14,c.best?"#ffd166":"#f3f7ff","center");
-        drawText(c.k+"×"+c.k+" ＝ "+(c.k*c.k)+" 個",cx+cardW/2,cy+38,11,"#b8c9df","center");
-        drawText(c.blocks+" 塊",cx+cardW/2,cy+60,13,c.best?"#62e7b3":(c.ok?"#75cfff":"#ff8fa7"),"center");
-        var statusText=c.best?"✔ 最大可行":(c.ok?"✔ 可行":"✗ 超過 "+lim);
-        drawText(statusText,cx+cardW/2,cy+82,11,c.best?"#62e7b3":(c.ok?"#62e7b3":"#ff8fa7"),"center");
-      });
-      drawText("🎯 判定："+baseBlocks+" × k² ≤ "+lim+" ⟹ k² ≤ "+Math.floor(lim/baseBlocks)+" ⟹ 最大整數 k ＝ "+k+"（邊長放大 "+k+" 倍）",W/2,startY+168,14,"#ffd166","center");
+      drawGlowPill("1×1 基本正方形（"+baseBlocks+" 塊）",W/2,by+maxSz+24,"#ffd166","rgba(8, 22, 40, 0.95)","#ffd166");
     }else{
-      // Step dLen + 3: Final answer & leftover tray!
-      var maxDrawW=Math.min(W*0.42,210),maxDrawH=Math.min(H-startY-70,210);
-      var bScale=Math.min(maxDrawW/(M*k),maxDrawH/(M*k));
-      var sqPix=(M*k)*bScale;
-      var sqX=pad+40,sqY=startY+(H-startY-70-sqPix)/2;
+      var matSz=Math.min(W*0.38,H*0.45);
+      var mx=W*0.28-matSz/2,my=H*0.46-matSz/2;
+      ctx.fillStyle="#10253f";ctx.fillRect(mx,my,matSz,matSz);
+      ctx.strokeStyle="#62e7b3";ctx.lineWidth=3;ctx.strokeRect(mx,my,matSz,matSz);
 
-      ctx.fillStyle="#10253f";ctx.fillRect(sqX,sqY,sqPix,sqPix);
-      ctx.strokeStyle="#62e7b3";ctx.lineWidth=3;ctx.strokeRect(sqX,sqY,sqPix,sqPix);
-
-      var unitPix=sqPix/k;
+      var uSz=matSz/k;
       for(var r=0;r<k;r++){
         for(var c=0;c<k;c++){
-          var ux=sqX+c*unitPix,uy=sqY+r*unitPix;
-          ctx.strokeStyle="rgba(117, 207, 255, 0.4)";ctx.lineWidth=1;
-          ctx.strokeRect(ux,uy,unitPix,unitPix);
-          if(k<=6){
-            drawText("單位",ux+unitPix/2,uy+unitPix/2-6,9,"rgba(243,247,255,0.6)","center");
-            drawText(String(r*k+c+1),ux+unitPix/2,uy+unitPix/2+8,11,"#ffd166","center");
+          var sProg=stagger(t,r*k+c,k*k,0.6);
+          var ux=mx+c*uSz,uy=my+r*uSz;
+          ctx.fillStyle="rgba(98, 231, 179, "+(0.18*sProg)+")";
+          ctx.fillRect(ux,uy,uSz,uSz);
+          ctx.strokeStyle="rgba(117, 207, 255, 0.5)";ctx.strokeRect(ux,uy,uSz,uSz);
+
+          var tw=uSz/qL,th=uSz/qW;
+          for(var rr=0;rr<qW;rr++){
+            for(var cc=0;cc<qL;cc++){
+              ctx.strokeStyle="rgba(255,255,255,0.1)";
+              ctx.strokeRect(ux+cc*tw,uy+rr*th,tw,th);
+            }
           }
         }
       }
-      drawText("最大正方形邊長 ＝ "+maxSide+" cm",sqX+sqPix/2,sqY-12,14,"#ffd166","center");
-      drawText("（由 "+k+" × "+k+" ＝ "+(k*k)+" 個基本單位組成，共 "+usedBlocks+" 塊）",sqX+sqPix/2,sqY+sqPix+14,11,"#62e7b3","center");
+      drawText(maxSide+" cm",mx+matSz/2,my-12,13,"#62e7b3","center");
 
-      // Right side: Leftover tray
-      var trayX=sqX+sqPix+40,trayW=W-trayX-pad,trayH=sqPix;
-      ctx.fillStyle="rgba(8, 22, 40, 0.94)";
-      ctx.strokeStyle="#ffd166";ctx.lineWidth=1.5;
-      ctx.beginPath();
-      if(ctx.roundRect){ctx.roundRect(trayX,sqY,trayW,trayH,8)}else{ctx.rect(trayX,sqY,trayW,trayH)}
-      ctx.fill();ctx.stroke();
-
-      drawText("📦 剩餘瓷磚區",trayX+trayW/2,sqY+20,13,"#ffd166","center");
-      drawText("總塊數："+lim+" 塊",trayX+16,sqY+48,12,"#b8c9df","left");
-      drawText("用去："+usedBlocks+" 塊（"+k+"² ＝ "+(k*k)+" 單位）",trayX+16,sqY+72,12,"#75cfff","left");
-      drawText("剩下："+lim+" － "+usedBlocks+" ＝ "+leftover+" 塊！",trayX+16,sqY+100,13,"#62e7b3","left");
-
-      // Draw small leftover tile icons
-      var iconW=18,iconH=14;
-      var startTileX=trayX+16,startTileY=sqY+124;
-      for(var lt=0;lt<Math.min(leftover,20);lt++){
-        var row=Math.floor(lt/7),col=lt%7;
-        var ix=startTileX+col*(iconW+4),iy=startTileY+row*(iconH+4);
-        ctx.fillStyle="rgba(255, 209, 102, 0.35)";ctx.strokeStyle="#ffd166";ctx.lineWidth=1;
-        ctx.fillRect(ix,iy,iconW,iconH);ctx.strokeRect(ix,iy,iconW,iconH);
+      var chainY=H-26;
+      var chainStr="[1²×"+baseBlocks+"=12] ➔ [2²×"+baseBlocks+"=48] ➔ [3²×"+baseBlocks+"=108] ➔ [4²×"+baseBlocks+"=192] ➔ [5²×"+baseBlocks+"=300 ✅] ➔ [6²×"+baseBlocks+"=432 ❌]";
+      if(k!==5){
+        chainStr="[1²×"+baseBlocks+"] ➔ ... ➔ ["+k+"²×"+baseBlocks+"＝"+usedBlocks+" ✅] ➔ ["+(k+1)+"²×"+baseBlocks+"＝"+((k+1)*(k+1)*baseBlocks)+" ❌]";
       }
-      if(leftover>20){
-        drawText("...共 "+leftover+" 塊",startTileX+7*(iconW+4),startTileY+10,11,"#ffd166","left");
+      var chainFsz=Math.min(12,Math.max(9,W/55));
+      drawText(chainStr,W/2,chainY,chainFsz,"#b8c9df","center");
+
+      var rx=W*0.75,ry=H*0.42;
+      drawGlowPill("剩 "+leftover+" 塊",rx,ry-30,"#ffd166","rgba(8, 22, 40, 0.95)","#ffd166");
+      var itW=18,itH=12;
+      for(var i=0;i<Math.min(leftover,24);i++){
+        var c=i%6,r=Math.floor(i/6);
+        var ix=rx-60+c*(itW+4),iy=ry-10+r*(itH+4);
+        ctx.fillStyle="rgba(255, 209, 102, 0.35)";ctx.fillRect(ix,iy,itW,itH);
+        ctx.strokeStyle="#ffd166";ctx.strokeRect(ix,iy,itW,itH);
       }
     }
   }
 
-  // 3. 長方形池塘周圍種樹：逐步標定樹位與間距
+  // 3. 池塘周長種樹（GCD）：水波紋、四角大樹與環狀長高
   function drawWordPlantTrees(t){
     var L=nums[0],Wd=nums[1],d=gcd(L,Wd);
-    var finalNx=L/d,finalNy=Wd/d,totalTrees=2*(finalNx+finalNy);
+    var qL=Math.floor(L/d),qW=Math.floor(Wd/d),totalTrees=2*(qL+qW);
     var dLen=calc.divisors.length;
-    var pad=50,topPad=50;
-    var maxW=W-2*pad,maxH=H-pad-topPad-42;
-    var scale=Math.min(maxW/L,maxH/Wd);
+    var topY=76, btmPad=36;
+    var availW=W-120,availH=H-topY-btmPad;
+    var scale=Math.min(availW/L,availH/Wd);
     var rectW=L*scale,rectH=Wd*scale;
-    var x0=(W-rectW)/2,y0=topPad+(maxH-rectH)/2;
-
+    var x0=(W-rectW)/2,y0=topY+(availH-rectH)/2;
     var isDone=step>=total()-1;
 
-    drawText("長 "+L+" m × 寬 "+Wd+" m 池塘 ｜ 周長 "+(2*(L+Wd))+" m",pad,22,14,"#75cfff");
-    var subText=isDone?"最大樹距 ＝ "+d+" m ｜ 最少需種 "+totalTrees+" 棵樹":(step===0?"【步驟 0】四個頂角先定位":"【步驟 "+step+"】短除逐步求取最大樹距...");
-    drawText(subText,W-pad,22,14,isDone?"#62e7b3":"#ffd166","right");
+    var rightTag=step===0?"四角必種先定位":(isDone?"最大間距 "+d+" m ｜ 最少 "+totalTrees+" 棵樹":"短除法等分樹距中");
+    drawTopBadge("池塘 "+L+" m × "+Wd+" m ｜ 周長 "+(2*(L+Wd))+" m", rightTag, isDone?"#62e7b3":"#ffd166");
 
-    ctx.fillStyle="#092842";ctx.fillRect(x0,y0,rectW,rectH);
-    ctx.strokeStyle="#3b6998";ctx.lineWidth=3;ctx.strokeRect(x0,y0,rectW,rectH);
-    drawText("池塘水面",x0+rectW/2,y0+rectH/2,16,"rgba(117, 207, 255, 0.4)","center");
+    var now=performance.now();
+    var pulse=Math.sin(now*0.003);
+
+    ctx.save();
+    ctx.fillStyle="#08223a";ctx.strokeStyle="#3b6998";ctx.lineWidth=2.5;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(x0,y0,rectW,rectH,14);else ctx.rect(x0,y0,rectW,rectH);
+    ctx.fill();ctx.stroke();
+
+    var waveR=(Math.min(rectW,rectH)*0.25)*(1+0.15*pulse);
+    ctx.strokeStyle="rgba(117, 207, 255, 0.18)";ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(x0+rectW/2,y0+rectH/2,waveR,0,Math.PI*2);ctx.stroke();
+    ctx.beginPath();ctx.arc(x0+rectW/2,y0+rectH/2,waveR*0.6,0,Math.PI*2);ctx.stroke();
+    ctx.restore();
+
+    drawText(L+" m",x0+rectW/2,y0-14,13,"#75cfff","center");
+    drawText(Wd+" m",x0-14,y0+rectH/2,13,"#75cfff","right");
+
+    function drawTreeObj(tx,ty,r,isCorner,scalePop,label){
+      if(scalePop<=0)return;
+      ctx.save();
+      var rad=r*scalePop;
+      ctx.fillStyle="#784b24";
+      ctx.fillRect(tx-rad*0.25,ty,rad*0.5,rad*0.9);
+      ctx.beginPath();ctx.arc(tx,ty-rad*0.2,rad,0,Math.PI*2);
+      ctx.fillStyle=isCorner?"#ffd166":"#4ade80";ctx.fill();
+      ctx.strokeStyle="#081321";ctx.lineWidth=1.5;ctx.stroke();
+      if(isCorner){
+        ctx.strokeStyle="rgba(255, 209, 102, "+(0.4+0.3*pulse)+")";
+        ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(tx,ty-rad*0.2,rad+3,0,Math.PI*2);ctx.stroke();
+      }
+      if(label){
+        drawText(String(label),tx,ty-rad*0.2,Math.max(8,rad*0.75),"#081321","center");
+      }
+      ctx.restore();
+    }
 
     var corners=[{x:x0,y:y0},{x:x0+rectW,y:y0},{x:x0+rectW,y:y0+rectH},{x:x0,y:y0+rectH}];
-    var pts=[];
-    corners.forEach(function(c){pts.push({x:c.x,y:c.y,corner:true})});
-
-    if(step>0 && finalNx>0 && finalNy>0){
-      for(var i=1;i<finalNx;i++){
-        pts.push({x:x0+i*(rectW/finalNx),y:y0,corner:false});
-        pts.push({x:x0+i*(rectW/finalNx),y:y0+rectH,corner:false});
-      }
-      for(var j=1;j<finalNy;j++){
-        pts.push({x:x0,y:y0+j*(rectH/finalNy),corner:false});
-        pts.push({x:x0+rectW,y:y0+j*(rectH/finalNy),corner:false});
-      }
-    }
 
     if(step===0){
-      corners.forEach(function(c){
-        ctx.beginPath();ctx.arc(c.x,c.y,7,0,Math.PI*2);
-        ctx.fillStyle="#ffd166";ctx.fill();
-        ctx.strokeStyle="#081321";ctx.lineWidth=2;ctx.stroke();
-      });
-      drawText("★ 四角必先種 4 棵",x0+rectW/2,y0-15,13,"#ffd166","center");
+      for(var i=0;i<4;i++){
+        var pop=stagger(t,i,4,0.4);
+        drawTreeObj(corners[i].x,corners[i].y,10,true,pop,"★");
+      }
+    }else if(step<=dLen){
+      var curDivisor=product(calc.divisors.slice(0,step));
+      var snx=Math.round(L/curDivisor);
+      var segW=rectW/snx;
+      ctx.save();
+      ctx.strokeStyle="#ffd166";ctx.lineWidth=1.5;
+      for(var i=0;i<snx;i++){
+        var ax=x0+i*segW,bx=x0+(i+1)*segW;
+        ctx.beginPath();
+        ctx.moveTo(ax,y0-2);
+        ctx.quadraticCurveTo((ax+bx)/2,y0-16*easeEnter(t),bx,y0-2);
+        ctx.stroke();
+      }
+      ctx.restore();
+      corners.forEach(function(c){drawTreeObj(c.x,c.y,9,true,1,"★")});
+    }else if(step===dLen+1){
+      var segW=rectW/qL;
+      ctx.save();
+      ctx.strokeStyle="#ffd166";ctx.lineWidth=3;
+      ctx.shadowColor="#ffd166";ctx.shadowBlur=8;
+      ctx.beginPath();
+      ctx.moveTo(x0,y0-2);
+      ctx.quadraticCurveTo(x0+segW/2,y0-20*easeBackOut(t,2),x0+segW,y0-2);
+      ctx.stroke();
+      ctx.restore();
+      // y0 >= 76，所以 y0 - 24 >= 52，與頂部 y=20 留有超過 30px 的安全距離！
+      drawGlowPill("間距 "+d+" m",x0+segW/2,y0-24,"#ffd166","rgba(8, 22, 40, 0.9)","#ffd166");
+      corners.forEach(function(c){drawTreeObj(c.x,c.y,9,true,1,"★")});
     }else{
-      var countToShow=step>dLen?pts.length:Math.max(4,Math.round(pts.length*(step/total())));
-      for(var i=0;i<countToShow;i++){
-        var pt=pts[i];
-        ctx.fillStyle="#8b5a2b";ctx.fillRect(pt.x-2,pt.y,4,8);
-        ctx.beginPath();ctx.arc(pt.x,pt.y-3,pt.corner?8:6,0,Math.PI*2);
-        ctx.fillStyle=pt.corner?"#ffd166":"#4ade80";ctx.fill();
-        ctx.strokeStyle="#081321";ctx.lineWidth=1.5;ctx.stroke();
-      }
-      if(step>=dLen+1 && finalNx>0){
-        var segW=rectW/finalNx;
-        ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
-        ctx.beginPath();ctx.moveTo(x0,y0-6);ctx.lineTo(x0+segW,y0-6);ctx.stroke();
-        drawText("樹距 "+d+"m",x0+segW/2,y0-18,13,"#ffd166","center");
-      }
-      if(step===dLen+2){
-        drawText("長切 "+finalNx+" 段 ｜ 寬切 "+finalNy+" 段 ｜ 總段數 2×("+(finalNx+finalNy)+") ＝ "+totalTrees+" 段",x0+rectW/2,y0+rectH+24,13,"#62e7b3","center");
-      }
-      if(step>=dLen+1){
-        var items=[
-          {label:"長邊段數（底商 1）",val:finalNx+" 段",color:"#75cfff"},
-          {label:"寬邊段數（底商 2）",val:finalNy+" 段",color:"#62e7b3"},
-          {label:"四邊總棵數",val:totalTrees+" 棵",color:"#ffd166"}
-        ];
-        drawQuotientHelperCard(W-215,topPad+6,185,96,"💡 短除法底商直出段數",items,"✨ 總段數 ＝ 2×(底商1＋底商2)");
-      }
-    }
-  }
+      var treePts=[];
+      for(var i=0;i<qL;i++) treePts.push({x:x0+i*(rectW/qL),y:y0,isCorner:(i===0)});
+      for(var j=0;j<qW;j++) treePts.push({x:x0+rectW,y:y0+j*(rectH/qW),isCorner:(j===0)});
+      for(var i=qL;i>0;i--) treePts.push({x:x0+i*(rectW/qL),y:y0+rectH,isCorner:(i===qL)});
+      for(var j=qW;j>0;j--) treePts.push({x:x0,y:y0+j*(rectH/qW),isCorner:(j===qW)});
 
-  // 3D 等角投影輔助函式
-  function isoProj(x,y,z,cx,cy,s){
-    var cos30=0.866025,sin30=0.5;
-    return {x:cx+(x-y)*cos30*s, y:cy+(x+y)*sin30*s-z*s};
-  }
-  function drawIsoFace(p1,p2,p3,p4,fill,stroke){
-    ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);
-    ctx.lineTo(p3.x,p3.y);ctx.lineTo(p4.x,p4.y);ctx.closePath();
-    if(fill){ctx.fillStyle=fill;ctx.fill()}
-    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke()}
-  }
-
-  // 4. 長方體切成小正方體：3D 網格逐步剖分與單元正方體抽出
-  function drawWordCutCube(t){
-    var L=nums[0],Wd=nums[1],Hgt=nums[2],d=gcdAll(nums);
-    var nx=L/d,ny=Wd/d,nz=Hgt/d,totalCubes=nx*ny*nz;
-    var dLen=calc.divisors.length;
-    var cx=W/2,cy=H/2+8;
-    var s=Math.min((W*0.35)/(nx+ny),(H*0.38)/(nz+(nx+ny)*0.5),24);
-
-    var isDone=step>=total()-1;
-    drawText("長方體 "+L+" × "+Wd+" × "+Hgt+" cm ｜ 體積 "+(L*Wd*Hgt)+" cm³",30,22,14,"#75cfff");
-    var subText=isDone?"正方體邊長 ＝ "+d+" cm ｜ 共切出 "+nx+"×"+ny+"×"+nz+" ＝ "+totalCubes+" 個":(step===0?"【步驟 0】完整長方體木塊":"【步驟 "+step+"】進行 X, Y, Z 軸網格剖分...");
-    drawText(subText,W-30,22,14,isDone?"#62e7b3":"#ffd166","right");
-
-    var p00Z=isoProj(0,0,nz,cx,cy,s), pX0Z=isoProj(nx,0,nz,cx,cy,s), pXYZ=isoProj(nx,ny,nz,cx,cy,s), p0YZ=isoProj(0,ny,nz,cx,cy,s);
-    var pX00=isoProj(nx,0,0,cx,cy,s), pXY0=isoProj(nx,ny,0,cx,cy,s), p0Y0=isoProj(0,ny,0,cx,cy,s);
-
-    drawIsoFace(p00Z,pX0Z,pXYZ,p0YZ,"#4077a8","#75cfff");
-    drawIsoFace(pX00,pXY0,pXYZ,pX0Z,"#28537a","#75cfff");
-    drawIsoFace(p0Y0,pXY0,pXYZ,p0YZ,"#1d3e5e","#75cfff");
-
-    if(step>0){
-      ctx.strokeStyle="rgba(255, 209, 102, "+(isDone?0.9:0.45)+")";ctx.lineWidth=1;
-      for(var x=1;x<nx;x++){
-        var a=isoProj(x,0,nz,cx,cy,s),b=isoProj(x,ny,nz,cx,cy,s);
-        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-      }
-      for(var y=1;y<ny;y++){
-        var a=isoProj(0,y,nz,cx,cy,s),b=isoProj(nx,y,nz,cx,cy,s);
-        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-      }
-      for(var z=1;z<nz;z++){
-        var a=isoProj(0,ny,z,cx,cy,s),b=isoProj(nx,ny,z,cx,cy,s);
-        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-      }
-
-      if(step===dLen+2){
-        drawText("長切 "+nx+" 段 ｜ 寬切 "+ny+" 段 ｜ 高切 "+nz+" 段（即短除底商）",cx,cy-nz*s-25,13,"#62e7b3","center");
-      }
-
-      if(step>=dLen+1){
-        var items=[
-          {label:"長度段數（底商 1）",val:nx+" 段",color:"#75cfff"},
-          {label:"寬度段數（底商 2）",val:ny+" 段",color:"#62e7b3"},
-          {label:"高度段數（底商 3）",val:nz+" 段",color:"#ff9fc7"},
-          {label:"正方體總數",val:totalCubes+" 個",color:"#ffd166"}
-        ];
-        drawQuotientHelperCard(W-215,50,185,114,"💡 短除法底商直出段數",items,"✨ 總塊數 ＝ 底商相乘");
+      for(var idx=0;idx<treePts.length;idx++){
+        var p=treePts[idx];
+        var pop=stagger(t,idx,totalTrees,0.7);
+        drawTreeObj(p.x,p.y,8,p.isCorner,pop,idx+1);
       }
 
       if(isDone){
-        var explodeD=15*t;
-        var exX=cx-explodeD*0.866, exY=cy-explodeD*0.5-explodeD*0.6;
-        var c1=isoProj(0,0,nz,exX,exY,s), c2=isoProj(1,0,nz,exX,exY,s), c3=isoProj(1,1,nz,exX,exY,s), c4=isoProj(0,1,nz,exX,exY,s);
-        var c5=isoProj(1,1,nz-1,exX,exY,s), c6=isoProj(0,1,nz-1,exX,exY,s), c7=isoProj(1,0,nz-1,exX,exY,s);
-        drawIsoFace(c1,c2,c3,c4,"#ffd166","#fff");
-        drawIsoFace(c4,c3,c5,c6,"#e0b343","#fff");
-        drawIsoFace(c2,c3,c5,c7,"#c99a2e","#fff");
-        drawText("單位小正方體 邊長 "+d+" cm",c3.x+12,c3.y-14,14,"#ffd166");
+        drawGlowPill("2 × ("+qL+" ＋ "+qW+") ＝ "+totalTrees+" 棵",x0+rectW/2,y0+rectH/2,"#081321","rgba(98, 231, 179, 0.95)","#62e7b3");
       }
     }
   }
 
-  // 5. 【課本進階演練 11】長方體積木拼正方體（含積木總數上限）
+  // 4. 長方體切正方體（GCD）：3D 切割與抽出爆炸圖
+  function drawWordCutCube(t){
+    var L=nums[0],Wd=nums[1],Hgt=nums[2],d=gcdAll(nums);
+    var nx=Math.floor(L/d),ny=Math.floor(Wd/d),nz=Math.floor(Hgt/d),totalCubes=nx*ny*nz;
+    var dLen=calc.divisors.length;
+    var cx=W/2,cy=H/2+8;
+    var s=Math.min((W*0.35)/(nx+ny),(H*0.36)/(nz+(nx+ny)*0.5),24);
+    var isDone=step>=total()-1;
+
+    var rightTag=isDone?"正方體邊長 "+d+" cm ｜ 共 "+totalCubes+" 個":(step===0?"完整長方體木塊":"3D 等分切割中");
+    drawTopBadge("長方體 "+L+"×"+Wd+"×"+Hgt+" cm", rightTag, isDone?"#62e7b3":"#ffd166");
+
+    var now=performance.now();
+    var pulse=Math.sin(now*0.004);
+
+    if(step<=dLen){
+      var p00Z=isoProj(0,0,nz,cx,cy,s), pX0Z=isoProj(nx,0,nz,cx,cy,s), pXYZ=isoProj(nx,ny,nz,cx,cy,s), p0YZ=isoProj(0,ny,nz,cx,cy,s);
+      var pX00=isoProj(nx,0,0,cx,cy,s), pXY0=isoProj(nx,ny,0,cx,cy,s), p0Y0=isoProj(0,ny,0,cx,cy,s);
+
+      drawIsoFace(p00Z,pX0Z,pXYZ,p0YZ,"#4077a8","#75cfff");
+      drawIsoFace(pX00,pXY0,pXYZ,pX0Z,"#28537a","#75cfff");
+      drawIsoFace(p0Y0,pXY0,pXYZ,p0YZ,"#1d3e5e","#75cfff");
+
+      if(step>0){
+        var sweep=easeEnter(t);
+        ctx.strokeStyle="rgba(255, 209, 102, 0.75)";ctx.lineWidth=1.5;
+        for(var x=1;x<nx;x++){
+          var a=isoProj(x,0,nz,cx,cy,s),b=isoProj(x,ny*sweep,nz,cx,cy,s);
+          ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        }
+        for(var y=1;y<ny;y++){
+          var a=isoProj(0,y,nz,cx,cy,s),b=isoProj(nx*sweep,y,nz,cx,cy,s);
+          ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        }
+        for(var z=1;z<nz;z++){
+          var a=isoProj(0,ny,z,cx,cy,s),b=isoProj(nx*sweep,ny,z,cx,cy,s);
+          ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        }
+      }
+    }else if(step===dLen+1){
+      var p00Z=isoProj(0,0,nz,cx,cy,s), pX0Z=isoProj(nx,0,nz,cx,cy,s), pXYZ=isoProj(nx,ny,nz,cx,cy,s), p0YZ=isoProj(0,ny,nz,cx,cy,s);
+      var pX00=isoProj(nx,0,0,cx,cy,s), pXY0=isoProj(nx,ny,0,cx,cy,s), p0Y0=isoProj(0,ny,0,cx,cy,s);
+      drawIsoFace(p00Z,pX0Z,pXYZ,p0YZ,"#28537a","rgba(117, 207, 255, 0.4)");
+      drawIsoFace(pX00,pXY0,pXYZ,pX0Z,"#1d3e5e","rgba(117, 207, 255, 0.4)");
+      drawIsoFace(p0Y0,pXY0,pXYZ,p0YZ,"#142b42","rgba(117, 207, 255, 0.4)");
+
+      var exDist=22*easeBackOut(t,1.8);
+      var exX=cx+exDist*0.866, exY=cy+exDist*0.5+exDist*0.3;
+      var c1=isoProj(nx-1,ny-1,1,exX,exY,s), c2=isoProj(nx,ny-1,1,exX,exY,s), c3=isoProj(nx,ny,1,exX,exY,s), c4=isoProj(nx-1,ny,1,exX,exY,s);
+      var c5=isoProj(nx,ny,0,exX,exY,s), c6=isoProj(nx-1,ny,0,exX,exY,s), c7=isoProj(nx,ny-1,0,exX,exY,s);
+
+      ctx.save();
+      ctx.shadowColor="#ffd166";ctx.shadowBlur=10+5*pulse;
+      drawIsoFace(c1,c2,c3,c4,"#ffd166","#fff");
+      drawIsoFace(c4,c3,c5,c6,"#e0b343","#fff");
+      drawIsoFace(c2,c3,c5,c7,"#c99a2e","#fff");
+      ctx.restore();
+
+      drawGlowPill(d+"×"+d+"×"+d,c3.x+36,c3.y-10,"#ffd166","rgba(8, 22, 40, 0.9)","#ffd166");
+    }else{
+      var gap=3.5*easeBackOut(t,1.5);
+      for(var z=0;z<nz;z++){
+        var zProg=stagger(t,z,nz,0.6);
+        for(var y=0;y<ny;y++){
+          for(var x=0;x<nx;x++){
+            var ox=cx+(x-nx/2)*gap, oy=cy+(y-ny/2)*gap-(z-nz/2)*gap;
+            var p1=isoProj(x,y,z+1,ox,oy,s), p2=isoProj(x+1,y,z+1,ox,oy,s), p3=isoProj(x+1,y+1,z+1,ox,oy,s), p4=isoProj(x,y+1,z+1,ox,oy,s);
+            var p5=isoProj(x+1,y+1,z,ox,oy,s), p6=isoProj(x,y+1,z,ox,oy,s), p7=isoProj(x+1,y,z,ox,oy,s);
+            var hue=(z*60+180)%360;
+            var fillTop="hsla("+hue+", 70%, 55%, "+(0.6*zProg+0.2)+")";
+            var fillSide1="hsla("+hue+", 70%, 45%, "+(0.6*zProg+0.2)+")";
+            var fillSide2="hsla("+hue+", 70%, 35%, "+(0.6*zProg+0.2)+")";
+            drawIsoFace(p1,p2,p3,p4,fillTop,"#75cfff");
+            drawIsoFace(p2,p3,p5,p7,fillSide1,"#75cfff");
+            drawIsoFace(p4,p3,p5,p6,fillSide2,"#75cfff");
+          }
+        }
+      }
+      drawGlowPill(nx+" × "+ny+" × "+nz+" ＝ "+totalCubes+" 個",cx,H-36,"#081321","rgba(98, 231, 179, 0.95)","#62e7b3");
+    }
+  }
+
+  // 5. 積木拼正方體（含上限 k³ 放大）
   function drawWordBuildCube(t){
     var L=nums[0],Wd=nums[1],Hgt=nums[2],lim=(currentWordVals&&currentWordVals[3]!==undefined)?currentWordVals[3]:2000;
     var M=lcmAll(nums);
-    var nx=M/L,ny=M/Wd,nz=M/Hgt,baseCubes=nx*ny*nz;
+    var nx=Math.floor(M/L),ny=Math.floor(M/Wd),nz=Math.floor(M/Hgt),baseCubes=nx*ny*nz;
     var dLen=calc.divisors.length;
     var k=Math.max(1,Math.floor(Math.cbrt(lim/baseCubes)));
     var usedCubes=baseCubes*k*k*k,leftover=lim-usedCubes,maxSide=M*k;
     var isDone=step>=total()-1;
 
-    drawText("長方體積木 "+L+" × "+Wd+" × "+Hgt+" cm ｜ 總積木上限 "+lim+" 個 ｜ 拼成最大正方體",30,22,14,"#75cfff");
-    var subText=isDone?"最大正方體邊長 ＝ "+maxSide+" cm ｜ 剩餘 "+leftover+" 個":(step===0?"【步驟 0】單塊積木與正方體目標":"【步驟 "+step+"】短除法求最小正方體邊長...");
-    drawText(subText,W-30,22,14,isDone?"#62e7b3":"#ffd166","right");
+    var rightTag=isDone?"最大邊長 "+maxSide+" cm ｜ 剩餘 "+leftover+" 個":(step===0?"單塊積木比對":"求最小正方體 LCM");
+    drawTopBadge("積木 "+L+"×"+Wd+"×"+Hgt+" cm ｜ 上限 "+lim+" 個", rightTag, isDone?"#62e7b3":"#ffd166");
 
-    var cx=W/2,cy=H/2+8;
+    var now=performance.now();
+    var pulse=Math.sin(now*0.004);
 
     if(step<=dLen+1){
-      // Show base cube assembly (nx * ny * nz = baseCubes)
-      var s=Math.min((W*0.35)/(nx+ny),(H*0.38)/(nz+(nx+ny)*0.5),22);
-      ctx.setLineDash([4,4]);ctx.strokeStyle="rgba(117, 207, 255, 0.4)";ctx.lineWidth=1.5;
-      var p00Z=isoProj(0,0,nz,cx,cy,s), pX0Z=isoProj(nx,0,nz,cx,cy,s), pXYZ=isoProj(nx,ny,nz,cx,cy,s), p0YZ=isoProj(0,ny,nz,cx,cy,s);
-      var pX00=isoProj(nx,0,0,cx,cy,s), pXY0=isoProj(nx,ny,0,cx,cy,s), p0Y0=isoProj(0,ny,0,cx,cy,s);
-      drawIsoFace(p00Z,pX0Z,pXYZ,p0YZ,null,"rgba(117, 207, 255, 0.5)");
-      drawIsoFace(pX00,pXY0,pXYZ,pX0Z,null,"rgba(117, 207, 255, 0.5)");
-      ctx.setLineDash([]);
-
-      var maxDraw=1;
-      if(step===0)maxDraw=1;
-      else if(step<=dLen)maxDraw=Math.max(1,Math.round(baseCubes*(step/dLen)));
-      else maxDraw=baseCubes;
-
+      var s=Math.min((W*0.35)/(nx+ny),(H*0.36)/(nz+(nx+ny)*0.5),22);
+      var cx=W/2,cy=H/2+10;
+      var maxDraw=step===0?1:(step<=dLen?Math.round(baseCubes*(step/dLen)*easeEnter(t)):baseCubes);
       var drawn=0;
       for(var z=0;z<nz&&drawn<maxDraw;z++){
         for(var y=0;y<ny&&drawn<maxDraw;y++){
           for(var x=0;x<nx&&drawn<maxDraw;x++){
             var p1=isoProj(x,y,z+1,cx,cy,s), p2=isoProj(x+1,y,z+1,cx,cy,s), p3=isoProj(x+1,y+1,z+1,cx,cy,s), p4=isoProj(x,y+1,z+1,cx,cy,s);
-            var p5=isoProj(x+1,y+1,z,cx,cy,s), p6=isoProj(x,y+1,z,cx,cy,s);
-            var hue=(x*35+y*45+z*55)%360;
+            var p5=isoProj(x+1,y+1,z,cx,cy,s), p6=isoProj(x,y+1,z,cx,cy,s), p7=isoProj(x+1,y,z,cx,cy,s);
+            var hue=(x*30+y*40+z*50)%360;
             drawIsoFace(p1,p2,p3,p4,"hsl("+hue+", 65%, 55%)","#0005");
-            drawIsoFace(p2,p3,p5,isoProj(x+1,y,z,cx,cy,s),"hsl("+hue+", 65%, 45%)","#0005");
+            drawIsoFace(p2,p3,p5,p7,"hsl("+hue+", 65%, 45%)","#0005");
             drawIsoFace(p4,p3,p5,p6,"hsl("+hue+", 65%, 35%)","#0005");
             drawn++;
           }
         }
       }
-
       if(step===dLen+1){
-        drawQuotientHelperCard(W-215,50,185,108,"💡 第 1 小題：最小正方體",[
-          {label:"最小邊長 LCM",val:M+" cm",color:"#ffd166"},
-          {label:"長排（"+M+"÷"+L+"）",val:nx+" 個",color:"#75cfff"},
-          {label:"寬排（"+M+"÷"+Wd+"）",val:ny+" 個",color:"#62e7b3"},
-          {label:"高排（"+M+"÷"+Hgt+"）",val:nz+" 個",color:"#ff9fc7"}
-        ],"最少需 "+nx+"×"+ny+"×"+nz+" ＝ "+baseCubes+" 個積木");
+        drawGlowPill("1×1×1 基本正方體（"+baseCubes+" 個）",cx,H-36,"#ffd166","rgba(8, 22, 40, 0.95)","#ffd166");
       }
-    }else if(step===dLen+2){
-      // Step dLen + 2: k^3 cubic scaling!
-      drawText("💡 核心突破：邊長放大 k 倍 ⟹ 需 k × k × k ＝ k³ 個基本正方體 ＝ "+baseCubes+" × k³ 個積木",30,55,14,"#ffd166");
-      var kCases=[
-        {k:1,blocks:baseCubes*1,ok:true},
-        {k:2,blocks:baseCubes*8,ok:true},
-        {k:k,blocks:usedCubes,ok:true,best:true},
-        {k:k+1,blocks:baseCubes*(k+1)*(k+1)*(k+1),ok:false}
-      ];
-      var cardW=Math.min(130,(W-80)/kCases.length);
-      kCases.forEach(function(c,i){
-        var cx_k=40+i*(cardW+12),cy_k=85;
-        ctx.fillStyle=c.best?"rgba(98, 231, 179, 0.22)":(c.ok?"#10253f":"rgba(255, 143, 167, 0.15)");
-        ctx.strokeStyle=c.best?"#62e7b3":(c.ok?"#3b5575":"#ff8fa7");
-        ctx.lineWidth=c.best?2.5:1;
-        ctx.fillRect(cx_k,cy_k,cardW,110);ctx.strokeRect(cx_k,cy_k,cardW,110);
-
-        drawText("邊長 "+c.k+" 倍 (k＝"+c.k+")",cx_k+cardW/2,cy_k+20,13,c.best?"#ffd166":"#f3f7ff","center");
-        drawText(c.k+"³ ＝ "+(c.k*c.k*c.k)+" 顆大積木",cx_k+cardW/2,cy_k+42,11,"#b8c9df","center");
-        drawText(c.blocks+" 個",cx_k+cardW/2,cy_k+68,14,c.best?"#62e7b3":(c.ok?"#75cfff":"#ff8fa7"),"center");
-        var statusText=c.best?"✔ 最大可行":(c.ok?"✔ 可行":"✗ 超過 "+lim+" 個");
-        drawText(statusText,cx_k+cardW/2,cy_k+92,11,c.best?"#62e7b3":(c.ok?"#62e7b3":"#ff8fa7"),"center");
-      });
-      drawText("🎯 判定："+baseCubes+" × k³ ≤ "+lim+" ⟹ k³ ≤ "+Math.floor(lim/baseCubes)+" ⟹ 最大整數 k ＝ "+k+"（邊長放大 "+k+" 倍）",W/2,225,14,"#ffd166","center");
     }else{
-      // Step dLen + 3: Giant 3x3x3 compound cube + leftover card
-      var s3=Math.min((W*0.28)/(k+k),(H*0.35)/(k+(k+k)*0.5),30);
-      var c3x=W*0.35,c3y=H/2+20;
-      for(var z=0;z<k;z++){
-        for(var y=0;y<k;y++){
-          for(var x=0;x<k;x++){
-            var p1=isoProj(x,y,z+1,c3x,c3y,s3), p2=isoProj(x+1,y,z+1,c3x,c3y,s3), p3=isoProj(x+1,y+1,z+1,c3x,c3y,s3), p4=isoProj(x,y+1,z+1,c3x,c3y,s3);
-            var p5=isoProj(x+1,y+1,z,c3x,c3y,s3), p6=isoProj(x,y+1,z,c3x,c3y,s3);
-            drawIsoFace(p1,p2,p3,p4,"#4077a8","#ffd166");
-            drawIsoFace(p2,p3,p5,isoProj(x+1,y,z,c3x,c3y,s3),"#28537a","#ffd166");
-            drawIsoFace(p4,p3,p5,p6,"#1d3e5e","#ffd166");
+      var cubes=[
+        {kVal:1, cubes:baseCubes, side:M, label:"1³ ＝ "+baseCubes+" 個", ok:true},
+        {kVal:2, cubes:baseCubes*8, side:M*2, label:"2³ ＝ "+(baseCubes*8)+" 個", ok:true},
+        {kVal:k, cubes:usedCubes, side:maxSide, label:k+"³ ＝ "+usedCubes+" 個 ✅", ok:true, best:true}
+      ];
+
+      var secW=W/4;
+      cubes.forEach(function(cb,i){
+        var ccx=secW*(i+0.55), ccy=H*0.52;
+        var cs=20/(cb.kVal*0.6+0.6);
+        var kv=cb.kVal;
+        var pop=Math.max(0.01, stagger(t,i,3,0.5));
+
+        for(var z=0;z<kv;z++){
+          for(var y=0;y<kv;y++){
+            for(var x=0;x<kv;x++){
+              var p1=isoProj(x,y,z+1,ccx,ccy,cs*pop), p2=isoProj(x+1,y,z+1,ccx,ccy,cs*pop), p3=isoProj(x+1,y+1,z+1,ccx,ccy,cs*pop), p4=isoProj(x,y+1,z+1,ccx,ccy,cs*pop);
+              var p5=isoProj(x+1,y+1,z,ccx,ccy,cs*pop), p6=isoProj(x,y+1,z,ccx,ccy,cs*pop), p7=isoProj(x+1,y,z,ccx,ccy,cs*pop);
+              drawIsoFace(p1,p2,p3,p4,cb.best?"#4077a8":"#28537a",cb.best?"#ffd166":"#75cfff");
+              drawIsoFace(p2,p3,p5,p7,cb.best?"#28537a":"#1d3e5e",cb.best?"#ffd166":"#75cfff");
+              drawIsoFace(p4,p3,p5,p6,cb.best?"#1d3e5e":"#142b42",cb.best?"#ffd166":"#75cfff");
+            }
           }
         }
-      }
-      drawText("最大正方體邊長 ＝ "+maxSide+" cm",c3x,c3y-k*s3-20,14,"#ffd166","center");
-      drawText("（"+k+"³ ＝ "+(k*k*k)+" 顆大單位，共 "+usedCubes+" 個積木）",c3x,c3y+k*s3*0.6+15,11,"#62e7b3","center");
+        if(cb.best){
+          ctx.save();
+          ctx.strokeStyle="rgba(255, 209, 102, "+(0.5+0.3*pulse)+")";ctx.lineWidth=2;
+          ctx.beginPath();ctx.arc(ccx,ccy-kv*cs*0.7,kv*cs*1.5,0,Math.PI*2);ctx.stroke();
+          ctx.restore();
+        }
+        drawText(cb.label,ccx,H-55,12,cb.best?"#ffd166":"#b8c9df","center");
+        drawText(cb.side+" cm",ccx,H-38,11,cb.best?"#62e7b3":"#75cfff","center");
+      });
 
-      // Right leftover card
-      var trayX=W*0.65,trayY=60,trayW=W*0.32,trayH=H-trayY-55;
-      ctx.fillStyle="rgba(8, 22, 40, 0.94)";ctx.strokeStyle="#ffd166";ctx.lineWidth=1.5;
-      ctx.beginPath();
-      if(ctx.roundRect){ctx.roundRect(trayX,trayY,trayW,trayH,8)}else{ctx.rect(trayX,trayY,trayW,trayH)}
-      ctx.fill();ctx.stroke();
-
-      drawText("📦 剩餘積木區",trayX+trayW/2,trayY+22,13,"#ffd166","center");
-      drawText("總積木數："+lim+" 個",trayX+16,trayY+50,12,"#b8c9df","left");
-      drawText("排成 "+maxSide+" cm 正方體",trayX+16,trayY+74,12,"#75cfff","left");
-      drawText("用去："+usedCubes+" 個（"+k+"³ 單位）",trayX+16,trayY+98,12,"#75cfff","left");
-      drawText("剩下："+lim+" － "+usedCubes+" ＝ "+leftover+" 個！",trayX+16,trayY+128,13,"#62e7b3","left");
+      var rx=secW*3.5, ry=H*0.5;
+      drawGlowPill("剩 "+leftover+" 個",rx,ry-20,"#ffd166","rgba(8, 22, 40, 0.95)","#ffd166");
+      drawText("4³ = "+(baseCubes*64)+" ❌",rx,ry+16,11,"#ff8fa7","center");
     }
   }
 
-  // 6. 【課本延伸範例 12 ＆ 進階演練 12】環形跑道／旋轉木馬（含總時限內相會次數）
+  // 6. 環形跑道多人跑步（含總時限相會次數）
   function drawWordTrackRun(t){
     var T1=nums[0],T2=nums[1],T3=nums[2],lim=(currentWordVals&&currentWordVals[3]!==undefined)?currentWordVals[3]:180;
     var M=lcmAll(nums);
     var l1=Math.floor(M/T1),l2=Math.floor(M/T2),l3=Math.floor(M/T3);
     var meets=Math.floor(lim/M);
     var dLen=calc.divisors.length;
-    var pad=30;
-    var cx=W/2,cy=H/2-10;
-    var tw=Math.min(W-120,400), th=Math.min(H*0.48,160);
-
     var isDone=step>=total()-1;
 
-    drawText("甲每圈 "+T1+" 分 ｜ 乙每圈 "+T2+" 分 ｜ 丙每圈 "+T3+" 分 ｜ 總時限 "+lim+" 分",30,22,14,"#75cfff");
-    var subText=isDone?"首度會合 "+M+" 分 ｜ "+lim+" 分內共相會 "+meets+" 次":(step===0?"【步驟 0】三人就位起點出發":"【步驟 "+step+"】短除法求共同週期 LCM...");
-    drawText(subText,W-30,22,14,isDone?"#62e7b3":"#ffd166","right");
+    var rightTag=isDone?"首會 "+M+" 分 ｜ 共相會 "+meets+" 次":(step===0?"就位出發":"短除法求共同週期 LCM");
+    drawTopBadge("甲每圈 "+T1+" 分 ｜ 乙每圈 "+T2+" 分 ｜ 丙每圈 "+T3+" 分", rightTag, isDone?"#62e7b3":"#ffd166");
 
-    // 操場跑道橢圓背景
-    ctx.strokeStyle="#243d5c";ctx.lineWidth=18;
-    ctx.beginPath();
-    ctx.ellipse(cx,cy,tw/2,th/2,0,0,Math.PI*2);
-    ctx.stroke();
+    var cx=W/2,cy=H/2-18;
+    var tw=Math.min(W-120,380), th=Math.min(H*0.44,150);
 
-    ctx.strokeStyle="rgba(117, 207, 255, 0.4)";ctx.lineWidth=2;
+    ctx.save();
+    ctx.strokeStyle="#1a314d";ctx.lineWidth=28;
+    ctx.beginPath();ctx.ellipse(cx,cy,tw/2,th/2,0,0,Math.PI*2);ctx.stroke();
+
+    ctx.strokeStyle="rgba(117, 207, 255, 0.25)";ctx.lineWidth=1.5;
     ctx.setLineDash([6,6]);ctx.stroke();ctx.setLineDash([]);
+    ctx.restore();
 
-    // 起跑線
     ctx.strokeStyle="#ffd166";ctx.lineWidth=3;
-    ctx.beginPath();ctx.moveTo(cx+tw/2-12,cy);ctx.lineTo(cx+tw/2+12,cy);ctx.stroke();
-    drawText("起跑線",cx+tw/2+24,cy,11,"#ffd166","left");
+    ctx.beginPath();ctx.moveTo(cx+tw/2-14,cy);ctx.lineTo(cx+tw/2+14,cy);ctx.stroke();
+    drawText("起跑線",cx+tw/2+26,cy,11,"#ffd166","left");
 
-    var prog1=0,prog2=0,prog3=0;
+    var now=performance.now();
+    var simMin=0;
     if(step===0){
-      prog1=0;prog2=0;prog3=0;
+      simMin=0;
     }else if(step<=dLen){
-      var p=(step/dLen)+t*0.5;
-      prog1=(p*M/T1)%1;prog2=(p*M/T2)%1;prog3=(p*M/T3)%1;
+      var baseMin=(step/dLen)*M;
+      simMin=baseMin + (now*0.02)%(M*0.5);
     }else{
-      prog1=0;prog2=0;prog3=0;
+      simMin=M;
     }
 
     var runners=[
-      {name:"甲",color:"#75cfff",p:prog1,lap:l1,r:tw/2+6},
-      {name:"乙",color:"#62e7b3",p:prog2,lap:l2,r:tw/2},
-      {name:"丙",color:"#ff9fc7",p:prog3,lap:l3,r:tw/2-6}
+      {name:"甲",color:"#75cfff",lap:l1,time:T1,r:tw/2+8},
+      {name:"乙",color:"#62e7b3",lap:l2,time:T2,r:tw/2},
+      {name:"丙",color:"#ff9fc7",lap:l3,time:T3,r:tw/2-8}
     ];
 
     runners.forEach(function(rn){
-      var angle=rn.p*Math.PI*2;
+      var p=(simMin/rn.time)%1;
+      var angle=p*Math.PI*2;
       var rx=cx+Math.cos(angle)*(rn.r), ry=cy+Math.sin(angle)*(th/2*(rn.r/(tw/2)));
       ctx.beginPath();ctx.arc(rx,ry,7,0,Math.PI*2);
       ctx.fillStyle=rn.color;ctx.fill();
       ctx.strokeStyle="#081321";ctx.lineWidth=1.5;ctx.stroke();
-      drawText(rn.name,rx,ry-12,10,rn.color,"center");
+      drawText(rn.name,rx,ry-12,11,rn.color,"center");
     });
 
-    if(step>=dLen+1 && step<=dLen+2){
-      ctx.fillStyle="rgba(255, 209, 102, 0.18)";ctx.strokeStyle="#ffd166";ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.arc(cx+tw/2,cy,16,0,Math.PI*2);ctx.fill();ctx.stroke();
-      drawText("🎉 起點會合！",cx,cy,16,"#ffd166","center");
-      drawText("甲跑 "+l1+" 圈 ｜ 乙跑 "+l2+" 圈 ｜ 丙跑 "+l3+" 圈",cx,cy+24,13,"#62e7b3","center");
-    }
+    var displayTime=(step>=dLen+1)?M:Math.round(simMin);
+    drawText("t ＝ "+displayTime+" min",cx,cy-10,22,"#ffd166","center");
+    drawText("甲 "+l1+" 圈 ｜ 乙 "+l2+" 圈 ｜ 丙 "+l3+" 圈",cx,cy+18,13,"#62e7b3","center");
 
-    // Step dLen + 3: Timeline for meeting beacons
     if(step>=dLen+3){
-      var lineY=H-65;
-      var lineX1=pad+40, lineX2=W-pad-40;
-      var lineW=lineX2-lineX1;
-      ctx.strokeStyle="#5a7a9f";ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(lineX1,lineY);ctx.lineTo(lineX2,lineY);ctx.stroke();
+      var lineY=H-36;
+      var xStart=50,xEnd=W-50,lineW=xEnd-xStart;
+      ctx.strokeStyle="#3b6998";ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(xStart,lineY);ctx.lineTo(xEnd,lineY);ctx.stroke();
 
-      drawText("0分(出發)",lineX1,lineY+16,10,"#b8c9df","center");
-      ctx.beginPath();ctx.arc(lineX1,lineY,4,0,Math.PI*2);ctx.fillStyle="#b8c9df";ctx.fill();
-
+      drawText("0分",xStart,lineY+16,10,"#b8c9df","center");
       for(var m=1;m<=meets;m++){
-        var tMin=m*M;
-        var mx=lineX1+(tMin/lim)*lineW;
-        ctx.beginPath();ctx.arc(mx,lineY,6,0,Math.PI*2);
+        var mx=xStart+(m*M/lim)*lineW;
+        var pPop=Math.max(0.1, stagger(t,m-1,meets,0.5));
+        ctx.save();
+        ctx.translate(mx,lineY);
+        ctx.scale(pPop,pPop);
+        ctx.beginPath();ctx.arc(0,0,6,0,Math.PI*2);
         ctx.fillStyle="#ffd166";ctx.fill();
         ctx.strokeStyle="#081321";ctx.lineWidth=1.5;ctx.stroke();
-        drawText(tMin+"分",mx,lineY+16,11,"#ffd166","center");
-        drawText("第"+m+"次",mx,lineY-14,10,"#62e7b3","center");
+        drawText("★"+m,0,-12,11,"#ffd166","center");
+        drawText((m*M)+"分",0,16,10,"#62e7b3","center");
+        ctx.restore();
       }
-      drawText("🏁 總時限 "+lim+" 分鐘內共相會 "+meets+" 次（"+lim+" ÷ "+M+" ＝ "+meets+" 次，出發時不算）",W/2,H-22,12,"#62e7b3","center");
     }
   }
 
-  // 7. 多人週期輪流值班問題：掃描時間指針逐日推進
+  // 7. 多人週期輪流值班
   function drawWordShiftWork(t){
     var D1=nums[0],D2=nums[1],D3=nums[2],M=lcmAll(nums);
     var dLen=calc.divisors.length;
     var left=75,right=W-45,usable=right-left;
-    var rowH=34,startY=50;
+    var rowH=34,startY=58;
+    var isDone=step>=total()-1;
 
-    var targetDay=0, phaseNote="";
-    if(step===0){
-      targetDay=0;
-      phaseNote="【第 0 天】今天三人恰好同一天值班";
-    }else if(step===1){
-      targetDay=2*D1;
-      phaseNote="【第 "+targetDay+" 天】甲與丙偶合，但乙未值班";
-    }else if(step<=dLen){
-      targetDay=Math.floor(M*0.5);
-      phaseNote="【第 "+targetDay+" 天】週期尚未完全同步";
-    }else if(step===dLen+1){
-      targetDay=M;
-      phaseNote="【求得公倍數】最少 "+M+" 天後三人再次同一天值班！";
-    }else if(step===dLen+2){
-      targetDay=M;
-      phaseNote="【值班次數】甲值 "+Math.floor(M/D1)+" 次、乙值 "+Math.floor(M/D2)+" 次、丙值 "+Math.floor(M/D3)+" 次";
-    }else{
-      targetDay=M;
-      phaseNote="【第 "+M+" 天】🎉 三人值班日再次完全重合！";
-    }
+    var rightTag=isDone?"首度重合：第 "+M+" 天":"短除法求共同週期 LCM";
+    drawTopBadge("甲每 "+D1+" 天 ｜ 乙每 "+D2+" 天 ｜ 丙每 "+D3+" 天 輪值", rightTag, isDone?"#62e7b3":"#ffd166");
 
-    var prevDay=0;
-    if(previousStep===0)prevDay=0;
-    else if(previousStep===1)prevDay=2*D1;
-    else if(previousStep<=dLen)prevDay=Math.floor(M*0.5);
-    else prevDay=M;
+    var targetDay=step===0?0:(step<=dLen?Math.floor(M*0.5):M);
+    var prevDay=previousStep===0?0:(previousStep<=dLen?Math.floor(M*0.5):M);
+    var curDay=prevDay+(targetDay-prevDay)*easeMove(t);
 
-    var curDay=prevDay+(targetDay-prevDay)*t;
+    var people=[
+      {name:"甲",cycle:D1,color:"#75cfff"},
+      {name:"乙",cycle:D2,color:"#62e7b3"},
+      {name:"丙",cycle:D3,color:"#ff9fc7"}
+    ];
 
-    drawText("甲每 "+D1+" 天 ｜ 乙每 "+D2+" 天 ｜ 丙每 "+D3+" 天 輪值",left,22,14,"#75cfff");
-    drawText(phaseNote,right,22,14,(step>=total()-1)?"#62e7b3":"#ffd166","right");
-
-    var people=[{name:"甲醫師",cycle:D1,color:"#75cfff"},{name:"乙醫師",cycle:D2,color:"#62e7b3"},{name:"丙醫師",cycle:D3,color:"#ff9fc7"}];
     people.forEach(function(p,idx){
       var y=startY+idx*rowH;
-      drawText(p.name,left-8,y,12,p.color,"right");
+      drawText(p.name,left-12,y,13,p.color,"right");
       ctx.strokeStyle="#243d5c";ctx.lineWidth=2;
       ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();
 
@@ -2350,7 +2393,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
       }
     });
 
-    var axisY=startY+people.length*rowH+4;
+    var axisY=startY+people.length*rowH+8;
     ctx.strokeStyle="#5a7a9f";ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(left,axisY);ctx.lineTo(right,axisY);ctx.stroke();
     drawText("第 0 天",left,axisY+14,11,"#b8c9df","center");
@@ -2360,242 +2403,175 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(scanX,startY-15);ctx.lineTo(scanX,axisY+6);ctx.stroke();
 
-    if(step>=total()-1 && t>0.9){
-      ctx.fillStyle="rgba(255, 209, 102, 0.15)";
-      ctx.fillRect(right-15,startY-15,30,people.length*rowH+25);
-      drawText("🎉 第 "+M+" 天三人再次一同值班！",left+usable/2,axisY+34,14,"#ffd166","center");
+    if(step>=dLen+1){
+      var now=performance.now();
+      var pulse=Math.sin(now*0.004);
+      var endX=right;
+      ctx.save();
+      ctx.fillStyle="rgba(255, 209, 102, "+(0.2+0.1*pulse)+")";
+      ctx.fillRect(endX-12,startY-12,24,people.length*rowH+18);
+      ctx.strokeStyle="#ffd166";ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(endX,startY-10);ctx.lineTo(endX,axisY+2);ctx.stroke();
+      ctx.restore();
+
+      people.forEach(function(p,idx){
+        var y=startY+idx*rowH;
+        ctx.beginPath();ctx.arc(endX,y,7,0,Math.PI*2);
+        ctx.fillStyle="#ffd166";ctx.fill();
+        ctx.strokeStyle="#081321";ctx.lineWidth=2;ctx.stroke();
+      });
+
+      drawGlowPill("第 "+M+" 天三人同時值班！",left+usable/2,axisY+38,"#081321","rgba(255, 209, 102, 0.95)","#ffd166");
     }
   }
 
-  // 士兵繪圖小工具
-  function drawSoldier(x,y,radius,color,isGhost,label){
-    ctx.save();
-    if(isGhost){
-      ctx.setLineDash([3,3]);
-      ctx.strokeStyle=color||"#ffd166";
-      ctx.lineWidth=1.5;
-      ctx.fillStyle="rgba(255, 209, 102, 0.18)";
-      ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);
-      ctx.fill();ctx.stroke();
-      ctx.setLineDash([]);
-      if(label){
-        drawText(label,x,y,Math.max(9,radius),"#ffd166","center");
-      }
-    }else{
-      ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);
-      ctx.fillStyle=color||"#75cfff";ctx.fill();
-      ctx.strokeStyle="#081321";ctx.lineWidth=1.5;ctx.stroke();
-      ctx.fillStyle="rgba(255,255,255,0.45)";
-      ctx.beginPath();ctx.arc(x,y-radius*0.35,radius*0.35,0,Math.PI*2);ctx.fill();
-      if(label){
-        drawText(label,x,y+1,Math.max(8,radius*0.9),"#081321","center");
-      }
-    }
-    ctx.restore();
-  }
-
-  // 8. 【韓信點兵 初階】餘數皆相同（同餘＋r 型）
+  // 8. 韓信點兵 初階（同餘 +r 型）
   function drawWordHanXinSameRem(t){
     var d1=nums[0],d2=nums[1],d3=nums[2];
     var rem=(currentWordVals&&currentWordVals[3]!==undefined)?currentWordVals[3]:3;
     var M=lcmAll(nums),sol=M+rem;
     var dLen=calc.divisors.length;
-
-    var pad=30,topPad=45;
     var isDone=step>=total()-1;
 
-    drawText("🪖 韓信點兵：每 "+d1+" 餘 "+rem+" ｜ 每 "+d2+" 餘 "+rem+" ｜ 每 "+d3+" 餘 "+rem+"（同餘型）",pad,22,14,"#75cfff");
-    var subText=isDone?"最少士兵 ＝ "+sol+" 人 ｜ 三排驗算全數通過 ✔":(step===0?"【步驟 0】先請 "+rem+" 名落單士兵出列待命":"【步驟 "+step+"】短除法求整除公倍數基準...");
-    drawText(subText,W-pad,22,14,isDone?"#62e7b3":"#ffd166","right");
+    var rightTag=isDone?"最少士兵 ＝ "+sol+" 人":"同餘 ＋"+rem+" 型小兵變陣";
+    drawTopBadge("每 "+d1+"、"+d2+"、"+d3+" 人一排（皆餘 "+rem+" 人）", rightTag, isDone?"#62e7b3":"#ffd166");
 
-    var startY=topPad+18;
-    var availH=H-startY-55;
-    var rowH=availH/3;
+    var now=performance.now();
+    var pulse=Math.sin(now*0.004);
 
-    var rows=[
-      {d:d1,name:"每 "+d1+" 人一排",color:"#75cfff"},
-      {d:d2,name:"每 "+d2+" 人一排",color:"#62e7b3"},
-      {d:d3,name:"每 "+d3+" 人一排",color:"#ffd166"}
+    var cols=[
+      {d:d1,color:"#75cfff"},
+      {d:d2,color:"#62e7b3"},
+      {d:d3,color:"#ffd166"}
     ];
 
-    var maxSoldiersToShow=Math.max(sol,M+rem);
-    var usableW=W-240;
-    var beadR=Math.min(9,Math.max(4.5,usableW/(maxSoldiersToShow+6)));
+    var colW=(W-80)/3;
+    var startY=56;
+    var availH=H-startY-35;
 
-    // Camp box on top right: "⛺ 暫時出列區"
-    var campX=W-150,campY=startY+4,campW=130,campH=Math.min(availH,120);
-    ctx.fillStyle="rgba(8, 22, 40, 0.92)";ctx.strokeStyle="#ff9fc7";ctx.lineWidth=1.5;
-    ctx.beginPath();
-    if(ctx.roundRect){ctx.roundRect(campX,campY,campW,campH,8)}else{ctx.rect(campX,campY,campW,campH)}
-    ctx.fill();ctx.stroke();
+    cols.forEach(function(col,idx){
+      var cx=30+idx*(colW+10);
+      drawText("每 "+col.d+" 人一排",cx+colW/2,startY,13,col.color,"center");
 
-    drawText("⛺ 暫時出列區",campX+campW/2,campY+18,12,"#ff9fc7","center");
-    drawText("（總人數 － "+rem+"）",campX+campW/2,campY+34,10,"#b8c9df","center");
+      var squadCount=Math.floor(M/col.d);
+      var beadR=Math.min(7,Math.max(4.5,(colW-20)/(col.d*2.5)));
+      var gridStartY=startY+20;
+      var gridH=squadCount*(beadR*2+4);
 
-    var outCamp=(step>=1 && step<=dLen+1);
-    if(outCamp){
+      ctx.fillStyle="rgba(8, 22, 40, 0.5)";
+      ctx.strokeStyle="rgba(117, 207, 255, 0.2)";ctx.lineWidth=1;
+      ctx.strokeRect(cx,gridStartY,colW,gridH);
+
+      for(var s=0;s<M;s++){
+        var r=Math.floor(s/col.d),c=s%col.d;
+        var bx=cx+(colW-(col.d*(beadR*2+4)))/2 + c*(beadR*2+4) + beadR+2;
+        var by=gridStartY + r*(beadR*2+4) + beadR+2;
+        drawSoldier(bx,by,beadR,col.color,false);
+      }
+
+      var tailY=gridStartY+gridH+14;
+      var slideDown=(step>=1 && step<=dLen+1)?easeMove(t)*(availH-gridH-35):0;
+      var popBack=(step>=dLen+2)?easeBackOut(t,1.8):1;
+
+      var currentY=(step===0)?tailY:(step<=dLen+1?tailY+slideDown:(step>=dLen+2?tailY:tailY));
+      var currentLabel=(step===0||step>=dLen+2)?"+"+rem:"-"+rem;
+
       for(var rm=0;rm<rem;rm++){
-        var px=campX+20+rm*(beadR*2+6)+beadR, py=campY+60;
-        drawSoldier(px,py,beadR,"#ff9fc7",false);
+        var rx=cx+(colW-(rem*(beadR*2+6)))/2 + rm*(beadR*2+6) + beadR+3;
+        drawSoldier(rx,currentY,beadR*popBack,"#ff9fc7",false);
       }
-      drawText(rem+" 名落單小兵待命中",campX+campW/2,campY+85,10,"#ffd166","center");
-    }else if(step===0){
-      drawText("即將出列待命...",campX+campW/2,campY+65,11,"#b8c9df","center");
-    }else{
-      drawText("已全員歸隊！",campX+campW/2,campY+65,11,"#62e7b3","center");
-    }
-
-    rows.forEach(function(r,idx){
-      var y=startY+idx*rowH+rowH/2;
-      drawText(r.name,pad,y-6,13,r.color,"left");
-
-      var squadCount=Math.floor(M/r.d);
-      var qText="排滿需 "+squadCount+" 排";
-      if(step>=dLen+1)drawText(qText,pad,y+10,11,"#b8c9df","left");
-
-      var startX=pad+115;
-      var currentDisplayBase=0;
-      if(step===0){
-        currentDisplayBase=M;
-      }else if(step<=dLen){
-        var prog=step/dLen;
-        currentDisplayBase=Math.max(r.d*2,Math.round(M*prog));
-      }else{
-        currentDisplayBase=M;
-      }
-
-      for(var s=0;s<currentDisplayBase;s++){
-        var bx=startX+s*(beadR*2+2);
-        var gap=Math.floor(s/r.d)*4;
-        drawSoldier(bx+gap,y,beadR,r.color,false);
-      }
-
-      var tailX=startX+currentDisplayBase*(beadR*2+2)+Math.floor(currentDisplayBase/r.d)*4+8;
-
-      if(step===0){
-        ctx.strokeStyle="rgba(255, 159, 199, 0.7)";ctx.setLineDash([3,3]);
-        ctx.strokeRect(tailX-4,y-beadR-4,rem*(beadR*2+2)+8,beadR*2+8);
-        ctx.setLineDash([]);
-        for(var rm=0;rm<rem;rm++){
-          drawSoldier(tailX+rm*(beadR*2+2)+beadR,y,beadR,"#ff9fc7",false);
-        }
-        drawText("多 "+rem+" 人",tailX+rem*(beadR*2+2)+10,y,11,"#ff9fc7","left");
-      }else if(step>=dLen+2){
-        var bounce=step===dLen+2?Math.sin(t*Math.PI)*6:0;
-        for(var rm=0;rm<rem;rm++){
-          drawSoldier(tailX+rm*(beadR*2+2)+beadR,y-bounce,beadR,"#ff9fc7",false);
-        }
-        if(isDone){
-          drawText("✔ 餘 "+rem+" 人",tailX+rem*(beadR*2+2)+10,y,12,"#62e7b3","left");
-        }else{
-          drawText("＋ "+rem+" 人歸隊",tailX+rem*(beadR*2+2)+10,y,12,"#ffd166","left");
-        }
-      }
+      drawText(currentLabel,cx+colW/2,currentY+16,11,"#ff9fc7","center");
     });
 
-    if(step>=dLen+1){
-      drawText("整除公倍數基準 ＝ LCM("+d1+", "+d2+", "+d3+") ＝ "+M+" 人（三組皆排滿）",pad+115,H-58,12,"#62e7b3","left");
+    if(step===dLen+1){
+      drawGlowPill("滿排基準 LCM ＝ "+M,W/2,H-30,"#081321","rgba(117, 207, 255, 0.95)","#75cfff");
+    }else if(step>=dLen+2){
+      drawGlowPill(M+" ＋ "+rem+" ＝ "+sol+" 人",W/2,H-30,"#081321","rgba(255, 209, 102, 0.95)","#ffd166");
     }
   }
 
-  // 9. 【韓信點兵 中階】不足皆相同（不足－k 型）
+  // 9. 韓信點兵 中階（同缺 -k 型）
   function drawWordHanXinSameDeficit(t){
     var d1=nums[0],d2=nums[1],d3=nums[2];
     var def=(currentWordVals&&currentWordVals[3]!==undefined)?currentWordVals[3]:2;
     var r1=d1-def,r2=d2-def,r3=d3-def;
     var M=lcmAll(nums),sol=M-def;
     var dLen=calc.divisors.length;
-
-    var pad=30,topPad=45;
     var isDone=step>=total()-1;
 
-    drawText("🛡️ 韓信點兵：每 "+d1+" 餘 "+r1+" ｜ 每 "+d2+" 餘 "+r2+" ｜ 每 "+d3+" 餘 "+r3+"（皆不足 "+def+" 人）",pad,22,14,"#75cfff");
-    var subText=isDone?"最少士兵 ＝ "+sol+" 人 ｜ 三排驗算全數通過 ✔":(step===0?"【步驟 0】發現皆差 "+def+" 人滿一排":"【步驟 "+step+"】向借兵營借兵補滿求公倍數...");
-    drawText(subText,W-pad,22,14,isDone?"#62e7b3":"#ffd166","right");
+    var rightTag=isDone?"最少士兵 ＝ "+sol+" 人":"同缺 －"+def+" 型借兵填補";
+    drawTopBadge("每 "+d1+"(餘"+r1+")、每 "+d2+"(餘"+r2+")、每 "+d3+"(餘"+r3+")", rightTag, isDone?"#62e7b3":"#ffd166");
 
-    var startY=topPad+18;
-    var availH=H-startY-55;
-    var rowH=availH/3;
+    var now=performance.now();
+    var pulse=Math.sin(now*0.004);
 
-    var rows=[
-      {d:d1,r:r1,name:"每 "+d1+" 人（餘 "+r1+"）",color:"#75cfff"},
-      {d:d2,r:r2,name:"每 "+d2+" 人（餘 "+r2+"）",color:"#62e7b3"},
-      {d:d3,r:r3,name:"每 "+d3+" 人（餘 "+r3+"）",color:"#ffd166"}
+    var cols=[
+      {d:d1,r:r1,color:"#75cfff"},
+      {d:d2,r:r2,color:"#62e7b3"},
+      {d:d3,r:r3,color:"#ffd166"}
     ];
 
-    var usableW=W-240;
-    var beadR=Math.min(9,Math.max(4.5,usableW/(M+6)));
+    var colW=(W-80)/3;
+    var startY=56;
 
-    // Camp box on top right: "🚩 韓信借兵營"
-    var campX=W-150,campY=startY+4,campW=130,campH=Math.min(availH,120);
-    ctx.fillStyle="rgba(8, 22, 40, 0.92)";ctx.strokeStyle="#ffd166";ctx.lineWidth=1.5;
-    ctx.beginPath();
-    if(ctx.roundRect){ctx.roundRect(campX,campY,campW,campH,8)}else{ctx.rect(campX,campY,campW,campH)}
-    ctx.fill();ctx.stroke();
+    cols.forEach(function(col,idx){
+      var cx=30+idx*(colW+10);
+      drawText("每 "+col.d+" 人（餘 "+col.r+"）",cx+colW/2,startY,12,col.color,"center");
 
-    drawText("🚩 韓信借兵營",campX+campW/2,campY+18,12,"#ffd166","center");
-    drawText("（暫借 ＋ "+def+" 人補滿）",campX+campW/2,campY+34,10,"#b8c9df","center");
+      var squadCount=Math.floor(M/col.d);
+      var beadR=Math.min(7,Math.max(4.5,(colW-20)/(col.d*2.5)));
+      var gridStartY=startY+20;
+      var gridH=squadCount*(beadR*2+4);
 
-    var inBorrow=(step>=1 && step<=dLen+1);
-    if(inBorrow){
-      drawText("已借出 "+def+" 人支援",campX+campW/2,campY+65,11,"#62e7b3","center");
-      drawText("使各排完全湊滿",campX+campW/2,campY+85,10,"#b8c9df","center");
-    }else if(step===0){
-      for(var rm=0;rm<def;rm++){
-        var px=campX+25+rm*(beadR*2+6)+beadR, py=campY+60;
-        drawSoldier(px,py,beadR,"#ffd166",false);
+      ctx.fillStyle="rgba(8, 22, 40, 0.5)";
+      ctx.strokeStyle="rgba(117, 207, 255, 0.2)";ctx.lineWidth=1;
+      ctx.strokeRect(cx,gridStartY,colW,gridH);
+
+      for(var s=0;s<sol;s++){
+        var r=Math.floor(s/col.d),c=s%col.d;
+        var bx=cx+(colW-(col.d*(beadR*2+4)))/2 + c*(beadR*2+4) + beadR+2;
+        var by=gridStartY + r*(beadR*2+4) + beadR+2;
+        drawSoldier(bx,by,beadR,col.color,false);
       }
-      drawText(def+" 名借兵待命中",campX+campW/2,campY+85,10,"#ffd166","center");
-    }else{
-      drawText("借兵已歸還營地！",campX+campW/2,campY+65,11,"#ffd166","center");
-      drawText("扣除 － "+def+" 人",campX+campW/2,campY+85,10,"#ff8fa7","center");
-    }
 
-    rows.forEach(function(r,idx){
-      var y=startY+idx*rowH+rowH/2;
-      drawText(r.name,pad,y-6,13,r.color,"left");
+      for(var df=0;df<def;df++){
+        var s=sol+df;
+        var r=Math.floor(s/col.d),c=s%col.d;
+        var bx=cx+(colW-(col.d*(beadR*2+4)))/2 + c*(beadR*2+4) + beadR+2;
+        var by=gridStartY + r*(beadR*2+4) + beadR+2;
 
-      var squadCount=Math.floor(M/r.d);
-      var qText="排滿需 "+squadCount+" 排";
-      if(step>=dLen+1)drawText(qText,pad,y+10,11,"#b8c9df","left");
-
-      var startX=pad+140;
-      var realCount=sol;
-
-      for(var s=0;s<realCount;s++){
-        var bx=startX+s*(beadR*2+2);
-        var gap=Math.floor(s/r.d)*4;
-        drawSoldier(bx+gap,y,beadR,r.color,false);
+        if(step===0){
+          ctx.save();
+          ctx.strokeStyle="rgba(255, 209, 102, "+(0.5+0.4*pulse)+")";
+          ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+          ctx.beginPath();ctx.arc(bx,by,beadR,0,Math.PI*2);ctx.stroke();
+          ctx.restore();
+        }else if(step<=dLen+1){
+          var flyY=gridStartY-20*(1-easeMove(t));
+          var curY=by*easeMove(t) + flyY*(1-easeMove(t));
+          drawSoldier(bx,curY,beadR,"#ffd166",false);
+        }else{
+          var flyY=by-40*easeMove(t);
+          var alpha=Math.max(0,1-easeMove(t));
+          ctx.save();ctx.globalAlpha=alpha;
+          drawSoldier(bx,flyY,beadR,"#ffd166",false);
+          ctx.restore();
+        }
       }
 
       if(step===0){
-        for(var df=0;df<def;df++){
-          var s=realCount+df;
-          var bx=startX+s*(beadR*2+2)+Math.floor(s/r.d)*4;
-          drawSoldier(bx,y,beadR,"#ffd166",true,"缺");
-        }
-        var tailX=startX+M*(beadR*2+2)+Math.floor(M/r.d)*4+8;
-        drawText("缺 "+def+" 人滿排",tailX,y,11,"#ffd166","left");
-      }else if(step>=1 && step<=dLen+1){
-        for(var df=0;df<def;df++){
-          var s=realCount+df;
-          var bx=startX+s*(beadR*2+2)+Math.floor(s/r.d)*4;
-          drawSoldier(bx,y,beadR,"#ffd166",false);
-        }
-        var tailX=startX+M*(beadR*2+2)+Math.floor(M/r.d)*4+8;
-        drawText("＋ 借 "+def+" 人湊滿",tailX,y,11,"#ffd166","left");
-      }else{
-        var tailX=startX+realCount*(beadR*2+2)+Math.floor(realCount/r.d)*4+8;
-        drawText("－ 還 "+def+" 人 ＝ "+sol+" 人",tailX,y,11,"#62e7b3","left");
+        drawText("缺 "+def,cx+colW/2,gridStartY+gridH+16,11,"#ffd166","center");
       }
     });
 
-    if(step>=dLen+1){
-      drawText("湊滿公倍數基準 ＝ LCM("+d1+", "+d2+", "+d3+") ＝ "+M+" 人 ⟹ 真實人數 ＝ "+M+" － "+def+" ＝ "+sol+" 人",pad+115,H-58,12,"#62e7b3","left");
+    if(step===dLen+1){
+      drawGlowPill("借兵湊滿 LCM ＝ "+M,W/2,H-30,"#081321","rgba(255, 209, 102, 0.95)","#ffd166");
+    }else if(step>=dLen+2){
+      drawGlowPill(M+" － "+def+" ＝ "+sol+" 人",W/2,H-30,"#081321","rgba(98, 231, 179, 0.95)","#62e7b3");
     }
   }
 
-  // 10. 【韓信點兵 高階】餘數與不足皆不同 — 《孫子算經》物不知數
+  // 10. 韓信點兵 高階（不同餘數 — 《孫子算經》物不知數）
   function drawWordHanXinGeneral(t){
     var d1=nums[0],r1=(currentWordVals&&currentWordVals[1]!==undefined)?currentWordVals[1]:2;
     var d2=nums[1],r2=(currentWordVals&&currentWordVals[3]!==undefined)?currentWordVals[3]:3;
@@ -2605,273 +2581,174 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     var n0=solObj.n0,L12=solObj.L12,targetN=solObj.targetN,L123=solObj.L123;
     var dLen=calc.divisors.length;
     var effDLen=(dLen===0)?1:dLen;
-
-    var pad=25,topPad=45;
     var isDone=step>=total()-1;
 
-    drawText("🔴 《孫子算經》物不知數：每 "+d1+" 餘 "+r1+" ｜ 每 "+d2+" 餘 "+r2+" ｜ 每 "+d3+" 餘 "+r3+"（三軌對齊尺）",pad,22,14,"#75cfff");
-    var subText=isDone?"最少有 "+targetN+" 個 ｜ 通解 ＝ "+targetN+" ＋ "+L123+"×k ✔":(step===0?"【步驟 0】三軌彩色週期對齊尺：觀察餘數起點":"【步驟 "+step+"】分階段公倍數跳躍搜尋...");
-    drawText(subText,W-pad,22,14,isDone?"#62e7b3":"#ffd166","right");
+    var rightTag=isDone?"最少有 "+targetN+" 個":"三軌週期亮燈尺 ＋ 援軍合體";
+    drawTopBadge("÷"+d1+"餘"+r1+" ｜ ÷"+d2+"餘"+r2+" ｜ ÷"+d3+"餘"+r3, rightTag, isDone?"#62e7b3":"#ffd166");
 
-    // ================= 上半部：三軌彩色週期點亮尺 Sieve Track =================
-    var trackY0=topPad+8;
-    var numCount=Math.max(30,targetN+2);
-    var trackX0=pad+90;
-    var trackW=W-trackX0-pad-10;
+    var now=performance.now();
+    var pulse=Math.sin(now*0.004);
+
+    // 上半部：1 ～ 30 三軌週期亮燈尺（起始位置下移至 56，與頂部標題 y=20 留有充足空間）
+    var trackY0=56;
+    var numCount=30;
+    var trackX0=75;
+    var trackW=W-trackX0-30;
     var cellW=trackW/numCount;
-    var trackH=22;
+    var trackH=18;
 
     var tracks=[
-      {d:d1,r:r1,name:d1+" 人排 (餘 "+r1+")",color:"#75cfff"},
-      {d:d2,r:r2,name:d2+" 人排 (餘 "+r2+")",color:"#62e7b3"},
-      {d:d3,r:r3,name:d3+" 人排 (餘 "+r3+")",color:"#ff9fc7"}
+      {d:d1,r:r1,label:"÷"+d1+" 餘"+r1,color:"#75cfff"},
+      {d:d2,r:r2,label:"÷"+d2+" 餘"+r2,color:"#62e7b3"},
+      {d:d3,r:r3,label:"÷"+d3+" 餘"+r3,color:"#ff9fc7"}
     ];
-
-    // Background container for the 3 tracks
-    ctx.fillStyle="rgba(8, 22, 40, 0.94)";ctx.strokeStyle="rgba(117, 207, 255, 0.35)";ctx.lineWidth=1;
-    ctx.beginPath();
-    if(ctx.roundRect){ctx.roundRect(pad,trackY0-4,W-2*pad,trackH*3+30,8)}else{ctx.rect(pad,trackY0-4,W-2*pad,trackH*3+30)}
-    ctx.fill();ctx.stroke();
 
     tracks.forEach(function(tr,tIdx){
       var ty=trackY0+tIdx*trackH;
-      drawText(tr.name,trackX0-8,ty+trackH/2,11,tr.color,"right");
+      drawText(tr.label,trackX0-8,ty+trackH/2,10,tr.color,"right");
 
-      // Draw light-up dots
       for(var n=1;n<=numCount;n++){
         var cx=trackX0+(n-0.5)*cellW, cy=ty+trackH/2;
         var isLit=(n%tr.d===tr.r);
 
-        // Group border every tr.d numbers
         if(n%tr.d===0){
-          ctx.strokeStyle="rgba(255, 255, 255, 0.15)";ctx.lineWidth=1;
+          ctx.strokeStyle="rgba(255, 255, 255, 0.12)";ctx.lineWidth=1;
           ctx.beginPath();ctx.moveTo(trackX0+n*cellW,ty);ctx.lineTo(trackX0+n*cellW,ty+trackH);ctx.stroke();
         }
 
         if(isLit){
-          ctx.beginPath();ctx.arc(cx,cy,Math.min(5.5,cellW*0.38),0,Math.PI*2);
+          ctx.beginPath();ctx.arc(cx,cy,Math.min(5,cellW*0.38),0,Math.PI*2);
           ctx.fillStyle=tr.color;ctx.fill();
-          if((step===effDLen+1 && n===n0 && tIdx<=1) || (step>=effDLen+2 && n===targetN)){
-            ctx.strokeStyle="#ffd166";ctx.lineWidth=2;ctx.stroke();
-          }
         }else{
-          ctx.beginPath();ctx.arc(cx,cy,1.5,0,Math.PI*2);
-          ctx.fillStyle="rgba(255, 255, 255, 0.12)";ctx.fill();
+          ctx.beginPath();ctx.arc(cx,cy,1.2,0,Math.PI*2);
+          ctx.fillStyle="rgba(255, 255, 255, 0.1)";ctx.fill();
         }
       }
     });
 
-    // Number line ticks below track 3
-    var numLineY=trackY0+3*trackH+8;
-    for(var n=1;n<=numCount;n++){
-      var cx=trackX0+(n-0.5)*cellW;
-      if(n===1 || n%5===0 || n===n0 || n===targetN){
-        var isKey=(n===n0 || n===targetN);
-        drawText(String(n),cx,numLineY+4,isKey?11:9,isKey?"#ffd166":"#b8c9df","center");
-      }
-    }
-
-    // Step-specific effects on Sieve Track:
-    if(step===effDLen+1){
-      // Vertical beam at n0 (e.g. 8) spanning track 0 and track 1
+    if(step>=effDLen+1){
       var n0X=trackX0+(n0-0.5)*cellW;
-      ctx.strokeStyle="rgba(98, 231, 179, 0.85)";ctx.lineWidth=3;
-      ctx.beginPath();ctx.moveTo(n0X,trackY0-2);ctx.lineTo(n0X,trackY0+2*trackH);ctx.stroke();
-      ctx.fillStyle="rgba(98, 231, 179, 0.25)";
-      ctx.fillRect(n0X-cellW/2,trackY0,cellW,2*trackH);
-      drawText("🎯 藍綠對齊！n₀ ＝ "+n0,n0X,trackY0-12,11,"#ffd166","center");
-    }else if(step===effDLen+2){
-      // Arch leap from n0 to targetN
+      ctx.strokeStyle="rgba(98, 231, 179, 0.85)";ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(n0X,trackY0);ctx.lineTo(n0X,trackY0+2*trackH);ctx.stroke();
+    }
+    if(step>=effDLen+2){
       var n0X=trackX0+(n0-0.5)*cellW, targX=trackX0+(targetN-0.5)*cellW;
-      ctx.strokeStyle="#ffd166";ctx.lineWidth=2.5;
+      ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
       ctx.beginPath();
       ctx.moveTo(n0X,trackY0+trackH);
-      ctx.quadraticCurveTo((n0X+targX)/2,trackY0-28,targX,trackY0+trackH);
+      ctx.quadraticCurveTo((n0X+targX)/2,trackY0-18*easeEnter(t),targX,trackY0+trackH);
       ctx.stroke();
-      drawText("＋ "+L12+" (LCM("+d1+","+d2+"))",(n0X+targX)/2,trackY0-18,12,"#ffd166","center");
-
-      // Vertical highlight at targetN
-      ctx.strokeStyle="rgba(255, 209, 102, 0.85)";ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(targX,trackY0-2);ctx.lineTo(targX,trackY0+3*trackH);ctx.stroke();
-    }else if(step>=effDLen+3){
-      // Radiant vertical beam across all 3 tracks at targetN
+      drawText("+15 (3×5)",(n0X+targX)/2,trackY0-12,11,"#ffd166","center");
+    }
+    if(step>=effDLen+3){
       var targX=trackX0+(targetN-0.5)*cellW;
-      ctx.fillStyle="rgba(255, 209, 102, 0.35)";
-      ctx.fillRect(targX-cellW/2-2,trackY0-2,cellW+4,3*trackH+4);
-      ctx.strokeStyle="#ffd166";ctx.lineWidth=3;
-      ctx.beginPath();ctx.moveTo(targX,trackY0-6);ctx.lineTo(targX,trackY0+3*trackH+4);ctx.stroke();
-      drawText("✨ 三燈垂直全亮！",targX,trackY0-14,12,"#ffd166","center");
+      ctx.save();
+      ctx.fillStyle="rgba(255, 209, 102, "+(0.35+0.15*pulse)+")";
+      ctx.fillRect(targX-cellW/2,trackY0-4,cellW,3*trackH+8);
+      ctx.strokeStyle="#ffd166";ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(targX,trackY0-6);ctx.lineTo(targX,trackY0+3*trackH+6);ctx.stroke();
+      ctx.restore();
     }
 
-    // ================= 下半部：小兵方陣拼塊與援軍塞入動畫 =================
-    var bottomY=trackY0+3*trackH+32;
-    var bottomH=H-bottomY-50;
+    // 下半部：小兵方陣盤（為什麼 8 + 15 餘數不變？）
+    var bottomY=trackY0+3*trackH+20;
+    var trayW=(W-80)/3;
+    var bR=5;
 
-    if(step===0){
-      var cardW=(W-2*pad-20)/3;
-      var cards=[
-        {title:"🔵 軌道 1（"+d1+"人一排）",text:"每 "+d1+" 格點亮一顆燈",sub:"除以 "+d1+" 餘 "+r1+"（不足 "+(d1-r1)+"）",color:"#75cfff"},
-        {title:"🟢 軌道 2（"+d2+"人一排）",text:"每 "+d2+" 格點亮一顆燈",sub:"除以 "+d2+" 餘 "+r2+"（不足 "+(d2-r2)+"）",color:"#62e7b3"},
-        {title:"🌸 軌道 3（"+d3+"人一排）",text:"每 "+d3+" 格點亮一顆燈",sub:"除以 "+d3+" 餘 "+r3+"（不足 "+(d3-r3)+"）",color:"#ff9fc7"}
-      ];
-      cards.forEach(function(c,i){
-        var cx=pad+i*(cardW+10),cy=bottomY+6;
-        ctx.fillStyle="#10253f";ctx.strokeStyle=c.color;ctx.lineWidth=1.5;
-        ctx.fillRect(cx,cy,cardW,68);ctx.strokeRect(cx,cy,cardW,68);
-        drawText(c.title,cx+cardW/2,cy+18,12,c.color,"center");
-        drawText(c.text,cx+cardW/2,cy+36,12,"#f3f7ff","center");
-        drawText(c.sub,cx+cardW/2,cy+52,10,"#b8c9df","center");
-      });
-      var bnrY=bottomY+84;
-      ctx.fillStyle="rgba(255, 209, 102, 0.12)";ctx.strokeStyle="#ffd166";ctx.lineWidth=1;
-      ctx.fillRect(pad,bnrY,W-2*pad,42);ctx.strokeRect(pad,bnrY,W-2*pad,42);
-      drawText("🚨 診斷：餘數 ("+r1+", "+r2+", "+r3+") 不同，不足數 ("+(d1-r1)+", "+(d2-r2)+", "+(d3-r3)+") 亦不同！起點錯開，需由對齊尺逐軌尋找垂直交集！",W/2,bnrY+21,12,"#ffd166","center");
-    }else if(step<=effDLen){
-      var bnrY=bottomY+10;
-      ctx.fillStyle="#10253f";ctx.strokeStyle="#62e7b3";ctx.lineWidth=1.5;
-      ctx.fillRect(pad+40,bnrY,W-2*pad-80,95);ctx.strokeRect(pad+40,bnrY,W-2*pad-80,95);
-      drawText("【短除法求共同週期】",W/2,bnrY+20,14,"#ffd166","center");
-      drawText("前兩軌步長：LCM("+d1+", "+d2+") ＝ "+L12+" ｜ 三軌總週期：LCM("+d1+", "+d2+", "+d3+") ＝ "+L123,W/2,bnrY+46,14,"#75cfff","center");
-      drawText("關鍵思考：只要每次跳躍 "+L12+" 格，藍燈與綠燈必然同時保持點亮！",W/2,bnrY+74,12,"#b8c9df","center");
-    }else if(step===effDLen+1){
-      drawText("第一階段：前兩軌在 "+n0+" 初次對齊！檢視 "+n0+" 個小兵排隊實況：",pad,bottomY+12,13,"#75cfff");
-      var sRowY=bottomY+32;
-      var sRows=[
-        {d:d1,r:r1,q:Math.floor(n0/d1),ok:true,name:d1+" 人排：",color:"#75cfff"},
-        {d:d2,r:r2,q:Math.floor(n0/d2),ok:true,name:d2+" 人排：",color:"#62e7b3"},
-        {d:d3,r:n0%d3,q:Math.floor(n0/d3),ok:(n0%d3===r3),name:d3+" 人排：",color:"#ff9fc7"}
-      ];
-      var bR=7;
-      sRows.forEach(function(sr,sIdx){
-        var sy=sRowY+sIdx*26;
-        drawText(sr.name,pad+10,sy,12,sr.color,"left");
-        var sx=pad+100;
-        for(var q=0;q<sr.q;q++){
-          ctx.strokeStyle="rgba(255,255,255,0.25)";ctx.strokeRect(sx-2,sy-bR-2,sr.d*(bR*2+3)+4,bR*2+4);
-          for(var m=0;m<sr.d;m++){
-            drawSoldier(sx+m*(bR*2+3)+bR,sy,bR,sr.color,false);
+    var trays=[
+      {d:d1,r:r1,label:"÷"+d1,color:"#75cfff"},
+      {d:d2,r:r2,label:"÷"+d2,color:"#62e7b3"},
+      {d:d3,r:r3,label:"÷"+d3,color:"#ff9fc7"}
+    ];
+
+    trays.forEach(function(tr,idx){
+      var tx=30+idx*(trayW+10);
+      drawText(tr.label,tx+trayW/2,bottomY,12,tr.color,"center");
+
+      var gridY=bottomY+14;
+      ctx.fillStyle="rgba(8, 22, 40, 0.4)";
+      ctx.strokeStyle="rgba(117, 207, 255, 0.2)";ctx.lineWidth=1;
+      ctx.strokeRect(tx,gridY,trayW,H-gridY-42);
+
+      if(step<=effDLen+1){
+        var q=Math.floor(n0/tr.d),remDot=n0%tr.d;
+        var isMatch=(remDot===tr.r);
+        for(var s=0;s<q*tr.d;s++){
+          var r=Math.floor(s/tr.d),c=s%tr.d;
+          var bx=tx+(trayW-(tr.d*(bR*2+4)))/2 + c*(bR*2+4) + bR+2;
+          var by=gridY + r*(bR*2+4) + bR+6;
+          drawSoldier(bx,by,bR,tr.color,false);
+        }
+        for(var rm=0;rm<remDot;rm++){
+          var bx=tx+(trayW-(tr.d*(bR*2+4)))/2 + rm*(bR*2+4) + bR+2;
+          var by=gridY + q*(bR*2+4) + bR+6;
+          drawSoldier(bx,by,bR,isMatch?"#62e7b3":"#ff8fa7",false);
+        }
+        drawText(isMatch?"餘 "+remDot+" ✅":"餘 "+remDot+" ❌",tx+trayW/2,gridY+q*(bR*2+4)+28,11,isMatch?"#62e7b3":"#ff8fa7","center");
+      }else{
+        var slide=easeMove(t);
+        if(idx===0){
+          for(var s=0;s<6;s++){
+            var r=Math.floor(s/3),c=s%3;
+            var bx=tx+(trayW-(3*(bR*2+4)))/2 + c*(bR*2+4) + bR+2;
+            var by=gridY + r*(bR*2+4) + bR+6;
+            drawSoldier(bx,by,bR,"#75cfff",false);
           }
-          sx+=sr.d*(bR*2+3)+8;
+          for(var s=0;s<15;s++){
+            var r=Math.floor(s/3),c=s%3;
+            var bx=tx+(trayW-(3*(bR*2+4)))/2 + c*(bR*2+4) + bR+2;
+            var targetY=gridY + (r+2)*(bR*2+4) + bR+6;
+            var curY=gridY*(1-slide) + targetY*slide;
+            drawSoldier(bx,curY,bR,"#4ade80",false);
+          }
+          for(var rm=0;rm<2;rm++){
+            var bx=tx+(trayW-(3*(bR*2+4)))/2 + rm*(bR*2+4) + bR+2;
+            var by=gridY + 7*(bR*2+4) + bR+6;
+            drawSoldier(bx,by,bR,"#ffd166",false);
+          }
+          drawText("餘 2 🎯",tx+trayW/2,gridY+7*(bR*2+4)+24,11,"#ffd166","center");
+        }else if(idx===1){
+          for(var s=0;s<5;s++){
+            var r=Math.floor(s/5),c=s%5;
+            var bx=tx+(trayW-(5*(bR*2+4)))/2 + c*(bR*2+4) + bR+2;
+            var by=gridY + r*(bR*2+4) + bR+6;
+            drawSoldier(bx,by,bR,"#62e7b3",false);
+          }
+          for(var s=0;s<15;s++){
+            var r=Math.floor(s/5),c=s%5;
+            var bx=tx+(trayW-(5*(bR*2+4)))/2 + c*(bR*2+4) + bR+2;
+            var targetY=gridY + (r+1)*(bR*2+4) + bR+6;
+            var curY=gridY*(1-slide) + targetY*slide;
+            drawSoldier(bx,curY,bR,"#4ade80",false);
+          }
+          for(var rm=0;rm<3;rm++){
+            var bx=tx+(trayW-(5*(bR*2+4)))/2 + rm*(bR*2+4) + bR+2;
+            var by=gridY + 4*(bR*2+4) + bR+6;
+            drawSoldier(bx,by,bR,"#ffd166",false);
+          }
+          drawText("餘 3 🎯",tx+trayW/2,gridY+4*(bR*2+4)+24,11,"#ffd166","center");
+        }else{
+          for(var s=0;s<21;s++){
+            var r=Math.floor(s/7),c=s%7;
+            var bx=tx+(trayW-(7*(bR*2+4)))/2 + c*(bR*2+4) + bR+2;
+            var by=gridY + r*(bR*2+4) + bR+6;
+            drawSoldier(bx,by,bR,"#75cfff",false);
+          }
+          for(var rm=0;rm<2;rm++){
+            var bx=tx+(trayW-(7*(bR*2+4)))/2 + rm*(bR*2+4) + bR+2;
+            var by=gridY + 3*(bR*2+4) + bR+6;
+            drawSoldier(bx,by,bR,"#ffd166",false);
+          }
+          drawText("餘 2 🎯",tx+trayW/2,gridY+3*(bR*2+4)+24,11,"#ffd166","center");
         }
-        for(var rm=0;rm<sr.r;rm++){
-          drawSoldier(sx+rm*(bR*2+3)+bR,sy,bR,"#ff8fa7",false);
-        }
-        sx+=sr.r*(bR*2+3)+8;
-        var tag=sr.ok?"✔ 餘 "+sr.r+" 人（符合）":"❌ 餘 "+sr.r+" 人（不符，題目要餘 "+r3+"）";
-        drawText(tag,sx+6,sy,11,sr.ok?"#62e7b3":"#ff8fa7","left");
-      });
-      drawText("⚠️ "+n0+" 人符合前兩排，但在 "+d3+" 人一排時只多 "+(n0%d3)+" 人，需塞入「整排援軍」來滿足第三條件！",W/2,bottomY+115,12,"#ffd166","center");
-    }else if(step===effDLen+2){
-      drawText("第二階段：塞入 "+L12+" 名整排援軍（保證前兩排餘數完全不變！）：",pad,bottomY+12,13,"#ffd166");
-
-      var box1X=pad+10, box1W=(W-2*pad-40)*0.28, box1H=90;
-      ctx.fillStyle="#10253f";ctx.strokeStyle="#75cfff";ctx.lineWidth=1.5;
-      ctx.fillRect(box1X,bottomY+28,box1W,box1H);ctx.strokeRect(box1X,bottomY+28,box1W,box1H);
-      drawText("原士兵："+n0+" 人",box1X+box1W/2,bottomY+44,12,"#75cfff","center");
-      drawText("÷"+d1+" 餘 "+r1+" ｜ ÷"+d2+" 餘 "+r2,box1X+box1W/2,bottomY+68,11,"#b8c9df","center");
-
-      drawText("＋",box1X+box1W+12,bottomY+72,18,"#ffd166","center");
-      var box2X=box1X+box1W+24, box2W=(W-2*pad-40)*0.36, box2H=90;
-      ctx.fillStyle="rgba(255, 209, 102, 0.16)";ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
-      ctx.fillRect(box2X,bottomY+28,box2W,box2H);ctx.strokeRect(box2X,bottomY+28,box2W,box2H);
-      drawText("🛡️ "+L12+" 名整排援軍 (LCM("+d1+","+d2+"))",box2X+box2W/2,bottomY+44,12,"#ffd166","center");
-      drawText("＝ 5 排 × 3人 ＝ 3 排 × 5人（皆滿排）",box2X+box2W/2,bottomY+64,11,"#62e7b3","center");
-      drawText("✨ 塞入後，尾端餘數保持 2 與 3 不變！",box2X+box2W/2,bottomY+84,10,"#ffd166","center");
-
-      drawText("＝",box2X+box2W+12,bottomY+72,18,"#ffd166","center");
-      var box3X=box2X+box2W+24, box3W=W-pad-box3X, box3H=90;
-      ctx.fillStyle="#10253f";ctx.strokeStyle="#62e7b3";ctx.lineWidth=2;
-      ctx.fillRect(box3X,bottomY+28,box3W,box3H);ctx.strokeRect(box3X,bottomY+28,box3W,box3H);
-      drawText("總人數："+targetN+" 人",box3X+box3W/2,bottomY+44,13,"#62e7b3","center");
-      drawText("重排為 "+d3+" 人一排：",box3X+box3W/2,bottomY+64,11,"#b8c9df","center");
-      drawText(targetN+" ÷ "+d3+" ＝ 3 排 ... 餘 "+r3+" 人 🎯 命中！",box3X+box3W/2,bottomY+84,11,"#62e7b3","center");
-    }else{
-      drawText("第三階段：最小正整數解 ＝ "+targetN+" ｜ 通解 ＝ "+targetN+" ＋ "+L123+"×k",pad,bottomY+12,14,"#ffd166");
-      var vCols=[
-        {d:d1,r:r1,title:d1+" 人一排",color:"#75cfff"},
-        {d:d2,r:r2,title:d2+" 人一排",color:"#62e7b3"},
-        {d:d3,r:r3,title:d3+" 人一排",color:"#ff9fc7"}
-      ];
-      var colW=(W-2*pad-20)/3;
-      vCols.forEach(function(c,i){
-        var cx=pad+i*(colW+10),cy=bottomY+30;
-        ctx.fillStyle="#10253f";ctx.strokeStyle=c.color;ctx.lineWidth=1.5;
-        ctx.fillRect(cx,cy,colW,78);ctx.strokeRect(cx,cy,colW,78);
-        drawText(c.title,cx+colW/2,cy+18,13,c.color,"center");
-        var quot=Math.floor(targetN/c.d);
-        drawText(targetN+" ÷ "+c.d+" ＝ "+quot+" ... 餘 "+c.r+" ✔",cx+colW/2,cy+42,13,"#62e7b3","center");
-        drawText("（合於題意）",cx+colW/2,cy+62,11,"#b8c9df","center");
-      });
-      drawText("🎉 驗算通過！最小正整數解為 "+targetN+" 個（接下來每加 "+L123+" 人，三燈必再次同時點亮！）",W/2,bottomY+120,12,"#62e7b3","center");
-    }
-  }
-
-    // 全情境通用：即時算式對照橫幅 (Live Formula HUD)
-  function drawLiveFormulaHUD(){
-    var sc=wordScenarios[currentScenario];
-    if(!sc||!sc.getHUD)return;
-    var ans=mode==="gcd"?gcdAll(nums):lcmAll(nums);
-    var hud=sc.getHUD(nums,ans,step,total(),currentWordVals);
-    if(!hud)return;
-
-    var hudH=36;
-    var hudPad=16;
-    var hudY=H-hudH-10;
-    var hudW=W-2*hudPad;
-    var hudX=hudPad;
-
-    ctx.save();
-    ctx.fillStyle="rgba(8, 22, 40, 0.92)";
-    ctx.strokeStyle="rgba(117, 207, 255, 0.45)";
-    ctx.lineWidth=1.5;
-    ctx.beginPath();
-    if(ctx.roundRect){
-      ctx.roundRect(hudX,hudY,hudW,hudH,10);
-    }else{
-      ctx.rect(hudX,hudY,hudW,hudH);
-    }
-    ctx.fill();ctx.stroke();
-
-    var badgeText=hud.badge||"步驟算式";
-    ctx.font="700 12px sans-serif";
-    var bMeasure=ctx.measureText(badgeText);
-    var badgeW=Math.max(76,bMeasure.width+14);
-
-    ctx.fillStyle="rgba(255, 209, 102, 0.22)";
-    ctx.strokeStyle="#ffd166";
-    ctx.lineWidth=1.2;
-    ctx.beginPath();
-    if(ctx.roundRect){
-      ctx.roundRect(hudX+6,hudY+5,badgeW,hudH-10,6);
-    }else{
-      ctx.rect(hudX+6,hudY+5,badgeW,hudH-10);
-    }
-    ctx.fill();ctx.stroke();
-
-    ctx.fillStyle="#ffd166";
-    ctx.textAlign="center";ctx.textBaseline="middle";
-    ctx.fillText(badgeText,hudX+6+badgeW/2,hudY+hudH/2);
-
-    var startX=hudX+badgeW+16;
-    var textY=hudY+hudH/2;
-    ctx.font="700 13px sans-serif";
-    ctx.textAlign="left";ctx.textBaseline="middle";
-
-    var curX=startX;
-    if(hud.parts&&hud.parts.length){
-      for(var i=0;i<hud.parts.length;i++){
-        var p=hud.parts[i];
-        ctx.fillStyle=p.color||"#f3f7ff";
-        ctx.fillText(p.text,curX,textY);
-        curX+=ctx.measureText(p.text).width;
-        if(curX>hudX+hudW-10)break;
       }
-    }else if(hud.text){
-      ctx.fillStyle=hud.color||"#f3f7ff";
-      ctx.fillText(hud.text,curX,textY);
+    });
+
+    if(step>=effDLen+2){
+      drawGlowPill("8 ＋ 15 ＝ 23 人 🎯",W/2,H-22,"#081321","rgba(255, 209, 102, 0.95)","#ffd166");
     }
-    ctx.restore();
   }
+
   // ================= 經典 GCD / LCM Canvas 幾何繪圖 =================
   function geometry(n,size,w,h){
     var count=n/size,cols=Math.max(1,Math.ceil(Math.sqrt(size))),rows=Math.ceil(size/cols),best=null;
@@ -2972,15 +2849,17 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
     if(!ctx)return;
     if(raf!==null)cancelAnimationFrame(raf);
     function frame(now){
-      var duration=(questionType==="word"&&currentScenario==="trackRun")?1800:1000;
-      var raw=Math.max(0,Math.min(1,(now-start)/duration)),t=1-Math.pow(1-raw,3);
+      var duration=1000;
+      var raw=Math.max(0,Math.min(1,(now-start)/duration));
       ctx.clearRect(0,0,W,H);
       if(questionType==="word"){
-        drawWord(t);
+        drawWord(raw);
+        raf=requestAnimationFrame(frame);
       }else{
-        if(mode==="gcd")drawGcd(t);else drawLcm(t);
+        var easeT=1-Math.pow(1-raw,3);
+        if(mode==="gcd")drawGcd(easeT);else drawLcm(easeT);
+        if(raw<1)raf=requestAnimationFrame(frame);else raf=null;
       }
-      if(raw<1)raf=requestAnimationFrame(frame);else raf=null;
     }
     raf=requestAnimationFrame(frame);
   }
