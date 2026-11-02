@@ -1564,6 +1564,12 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
         }
 
+        if(curStep===dLen+4 && k>=5){
+
+          return "<strong>邊長放大 4 倍 ("+(ans*4)+" cm)</strong> ➔ 面積放大 4² ＝ 16 倍 ➔ "+baseBlocks+" × 4² ＝ <strong>"+(baseBlocks*16)+" 塊</strong>";
+
+        }
+
         return "<strong>邊長放大 "+k+" 倍 ("+maxSide+" cm)</strong> ➔ "+baseBlocks+" × "+k+"² ＝ <strong>"+used+" 塊</strong> (≤"+lim+" ✅) ｜ 剩 "+lim+" － "+used+" ＝ <strong style='color:var(--gold)'>"+leftover+" 塊</strong>";
 
       },
@@ -1605,6 +1611,8 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
         if(curStep===dLen+2)return {badge:"2² 放大",parts:[{text:"邊長 "+(ans*2)+" cm ｜ 需 "+(baseBlocks*4)+" 塊",color:"#75cfff"}]};
 
         if(curStep===dLen+3)return {badge:"3² 放大",parts:[{text:"邊長 "+(ans*3)+" cm ｜ 需 "+(baseBlocks*9)+" 塊",color:"#75cfff"}]};
+
+        if(curStep===dLen+4 && k>=5)return {badge:"4² 放大",parts:[{text:"邊長 "+(ans*4)+" cm ｜ 需 "+(baseBlocks*16)+" 塊",color:"#75cfff"}]};
 
         return {badge:k+"² 最大正方形",parts:[{text:"最大邊長 "+maxSide+" cm ｜ 用 "+used+" 塊，剩 "+leftover+" 塊",color:"#62e7b3"}]};
 
@@ -4278,7 +4286,7 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
         var k=Math.max(1,Math.floor(Math.sqrt(lim/baseBlocks)));
 
-        var postSteps = (k >= 4 ? 4 : k);
+        var postSteps = (k >= 5 ? 5 : k);
 
         return dLen + postSteps;
 
@@ -5796,7 +5804,9 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
         else if(step===dLen+3)curBadgeText="步驟 4: 3² 邊長放大 3 倍 (108 塊)";
 
-        else curBadgeText="步驟 5: 5² 最大正方形 (300 塊，剩 10 塊)";
+        else if(step===dLen+4 && k>=5)curBadgeText="步驟 5: 4² 邊長放大 4 倍 (192 塊)";
+
+        else curBadgeText="步驟 "+(dLen+k)+": "+k+"² 最大正方形 ("+used+" 塊，剩 "+leftover+" 塊)";
 
       }else if(currentScenario==="buildCube"){
 
@@ -7538,185 +7548,89 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
       drawGlowPill("長寬對齊："+M+" cm ＝ LCM("+L+", "+Wd+")",W/2,by+maxSz+24,"#ffd166","rgba(8, 22, 40, 0.95)");
 
-    }else if(step===dLen+1){
-
-      var maxSz=Math.min(W*0.42,H*0.52,220);
-
-      var bx=(W-maxSz)/2,by=(H-maxSz)/2;
-
-      ctx.fillStyle="#10253f";ctx.fillRect(bx,by,maxSz,maxSz);
-
-      ctx.strokeStyle="#ffd166";ctx.lineWidth=2.5;ctx.strokeRect(bx,by,maxSz,maxSz);
-
-
-
-      var cellW=maxSz/qL,cellH=maxSz/qW;
-
-      for(var r=0;r<qW;r++){
-
-        for(var c=0;c<qL;c++){
-
-          var tx=bx+c*cellW,ty=by+r*cellH;
-
-          ctx.fillStyle="rgba(117, 207, 255, 0.22)";
-
-          ctx.fillRect(tx,ty,cellW,cellH);
-
-          ctx.strokeStyle="rgba(117, 207, 255, 0.6)";ctx.lineWidth=1;ctx.strokeRect(tx,ty,cellW,cellH);
-
-        }
-
-      }
-
-      drawText(M+" cm",bx+maxSz/2,by-12,13,"#ffd166","center");
-
-      drawText(M+" cm",bx-12,by+maxSz/2,13,"#ffd166","right");
-
-      drawGlowPill("1² 最小正方形 ｜ 邊長 "+M+" cm ｜ 需 "+qL+"×"+qW+" ＝ "+baseBlocks+" 塊",W/2,by+maxSz+22,"#ffd166","rgba(8, 22, 40, 0.95)");
-
-      drawStepPills(["1²＝12塊","2²＝48塊","3²＝108塊","4²＝192塊","5²＝300塊 ✅"],0,H-22);
-
-    }else if(step===dLen+2){
-
-      var matSz=Math.min(W*0.46,H*0.56,250);
-
-      var bx=(W-matSz)/2,by=(H-matSz)/2-10;
-
-      ctx.fillStyle="#10253f";ctx.fillRect(bx,by,matSz,matSz);
-
-      ctx.strokeStyle="#75cfff";ctx.lineWidth=2.5;ctx.strokeRect(bx,by,matSz,matSz);
-
-
-
-      var uSz=matSz/2;
-
-      for(var r=0;r<2;r++){
-
-        for(var c=0;c<2;c++){
-
-          var ux=bx+c*uSz,uy=by+r*uSz;
-
-          ctx.strokeStyle="rgba(255, 209, 102, 0.7)";ctx.lineWidth=1.5;ctx.strokeRect(ux,uy,uSz,uSz);
-
-          var tw=uSz/qL,th=uSz/qW;
-
-          for(var rr=0;rr<qW;rr++){
-
-            for(var cc=0;cc<qL;cc++){
-
-              ctx.fillStyle="rgba(117, 207, 255, 0.15)";
-
-              ctx.fillRect(ux+cc*tw,uy+rr*th,tw,th);
-
-              ctx.strokeStyle="rgba(255,255,255,0.15)";ctx.lineWidth=0.8;
-
-              ctx.strokeRect(ux+cc*tw,uy+rr*th,tw,th);
-
-            }
-
-          }
-
-        }
-
-      }
-
-      drawText((M*2)+" cm",bx+matSz/2,by-12,13,"#75cfff","center");
-
-      drawText((M*2)+" cm",bx-12,by+matSz/2,13,"#75cfff","right");
-
-      drawGlowPill("2² 放大正方形 ｜ 邊長 "+(M*2)+" cm ｜ 需 "+baseBlocks+"×2² ＝ "+(baseBlocks*4)+" 塊",W/2,by+matSz+22,"#75cfff","rgba(8, 22, 40, 0.95)");
-
-      drawStepPills(["1²＝12塊","2²＝48塊","3²＝108塊","4²＝192塊","5²＝300塊 ✅"],1,H-22);
-
-    }else if(step===dLen+3){
-
-      var matSz=Math.min(W*0.46,H*0.56,250);
-
-      var bx=(W-matSz)/2,by=(H-matSz)/2-10;
-
-      ctx.fillStyle="#10253f";ctx.fillRect(bx,by,matSz,matSz);
-
-      ctx.strokeStyle="#75cfff";ctx.lineWidth=2.5;ctx.strokeRect(bx,by,matSz,matSz);
-
-
-
-      var uSz=matSz/3;
-
-      for(var r=0;r<3;r++){
-
-        for(var c=0;c<3;c++){
-
-          var ux=bx+c*uSz,uy=by+r*uSz;
-
-          ctx.strokeStyle="rgba(255, 209, 102, 0.6)";ctx.lineWidth=1.2;ctx.strokeRect(ux,uy,uSz,uSz);
-
-          var tw=uSz/qL,th=uSz/qW;
-
-          for(var rr=0;rr<qW;rr++){
-
-            for(var cc=0;cc<qL;cc++){
-
-              ctx.fillStyle="rgba(117, 207, 255, 0.12)";
-
-              ctx.fillRect(ux+cc*tw,uy+rr*th,tw,th);
-
-              ctx.strokeStyle="rgba(255,255,255,0.12)";ctx.lineWidth=0.7;
-
-              ctx.strokeRect(ux+cc*tw,uy+rr*th,tw,th);
-
-            }
-
-          }
-
-        }
-
-      }
-
-      drawText((M*3)+" cm",bx+matSz/2,by-12,13,"#75cfff","center");
-
-      drawText((M*3)+" cm",bx-12,by+matSz/2,13,"#75cfff","right");
-
-      drawGlowPill("3² 放大正方形 ｜ 邊長 "+(M*3)+" cm ｜ 需 "+baseBlocks+"×3² ＝ "+(baseBlocks*9)+" 塊",W/2,by+matSz+22,"#75cfff","rgba(8, 22, 40, 0.95)");
-
-      drawStepPills(["1²＝12塊","2²＝48塊","3²＝108塊","4²＝192塊","5²＝300塊 ✅"],2,H-22);
-
     }else{
 
-      var matSz=Math.min(W*0.42,H*0.52,240);
+      var curK = step - dLen;
 
-      var mx=W*0.34-matSz/2,my=H*0.46-matSz/2;
-
-      ctx.fillStyle="#10253f";ctx.fillRect(mx,my,matSz,matSz);
-
-      ctx.strokeStyle="#62e7b3";ctx.lineWidth=3;ctx.strokeRect(mx,my,matSz,matSz);
+      if(curK > k) curK = k;
 
 
 
-      var uSz=matSz/k;
+      var pillLabels = ["1²＝12塊","2²＝48塊","3²＝108塊","4²＝192塊","5²＝300塊 ✅"];
 
-      for(var r=0;r<k;r++){
+      var activePill = Math.min(curK - 1, pillLabels.length - 1);
 
-        for(var c=0;c<k;c++){
 
-          var sProg=stagger(t,r*k+c,k*k,0.6);
 
-          var ux=mx+c*uSz,uy=my+r*uSz;
+      // 隨 curK 成比例長大：96 -> 130 -> 164 -> 198 -> 232 px
 
-          ctx.fillStyle="rgba(98, 231, 179, "+(0.18*sProg)+")";
+      var baseSz = Math.min(W * 0.16, H * 0.22, 96);
 
-          ctx.fillRect(ux,uy,uSz,uSz);
+      var growthStep = Math.min(W * 0.052, H * 0.068, 34);
 
-          ctx.strokeStyle="rgba(117, 207, 255, 0.4)";ctx.strokeRect(ux,uy,uSz,uSz);
+      var matSz = baseSz + (curK - 1) * growthStep;
 
-          var tw=uSz/qL,th=uSz/qW;
 
-          for(var rr=0;rr<qW;rr++){
 
-            for(var cc=0;cc<qL;cc++){
+      var curSide = M * curK;
 
-              ctx.strokeStyle="rgba(255,255,255,0.08)";
+      var curUsed = baseBlocks * curK * curK;
 
-              ctx.strokeRect(ux+cc*tw,uy+rr*th,tw,th);
+
+
+      var isFinal = (curK === k);
+
+      var cx = isFinal ? W * 0.35 : W * 0.5;
+
+      var cy = H * 0.44;
+
+      var bx = cx - matSz / 2, by = cy - matSz / 2;
+
+
+
+      ctx.fillStyle = "#10253f"; ctx.fillRect(bx, by, matSz, matSz);
+
+      var strokeCol = isFinal ? "#62e7b3" : (curK === 1 ? "#ffd166" : "#75cfff");
+
+      ctx.strokeStyle = strokeCol; ctx.lineWidth = isFinal ? 3 : 2.2;
+
+      ctx.strokeRect(bx, by, matSz, matSz);
+
+
+
+      // 繪製 curK x curK 個基準正方形單元，且內部清楚畫出 qL x qW (3x4) 瓷磚細切割線
+
+      var uSz = matSz / curK;
+
+      for(var r = 0; r < curK; r++){
+
+        for(var c = 0; c < curK; c++){
+
+          var ux = bx + c * uSz, uy = by + r * uSz;
+
+          ctx.fillStyle = isFinal ? "rgba(98, 231, 179, 0.12)" : "rgba(117, 207, 255, 0.14)";
+
+          ctx.fillRect(ux, uy, uSz, uSz);
+
+          if(curK > 1){
+
+            ctx.strokeStyle = "rgba(255, 209, 102, 0.6)"; ctx.lineWidth = 1.2;
+
+            ctx.strokeRect(ux, uy, uSz, uSz);
+
+          }
+
+          // 內部 8x6 瓷磚切割線（橫 3 塊、直 4 塊）
+
+          var tw = uSz / qL, th = uSz / qW;
+
+          for(var rr = 0; rr < qW; rr++){
+
+            for(var cc = 0; cc < qL; cc++){
+
+              ctx.strokeStyle = "rgba(255, 255, 255, 0.14)"; ctx.lineWidth = 0.8;
+
+              ctx.strokeRect(ux + cc * tw, uy + rr * th, tw, th);
 
             }
 
@@ -7726,49 +7640,67 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
       }
 
-      drawText(maxSide+" cm",mx+matSz/2,my-12,13,"#62e7b3","center");
-
-      drawText(maxSide+" cm",mx-12,my+matSz/2,13,"#62e7b3","right");
-
-      drawGlowPill(k+"² 最大正方形 ｜ 邊長 "+maxSide+" cm ｜ 用掉 "+usedBlocks+" 塊 ✅",W*0.34,my+matSz+22,"#62e7b3","rgba(8, 22, 40, 0.95)");
 
 
+      // 標註邊長尺寸在正方形外側（留足呼吸空間，不壓線）
 
-      var rx=W*0.78,ry=H*0.44;
+      drawText(curSide + " cm", bx + matSz / 2, by - 14, 13, strokeCol, "center");
 
-      drawGlowPill("剩餘 "+leftover+" 塊瓷磚",rx,ry-35,"#ffd166","rgba(8, 22, 40, 0.95)","#ffd166");
+      drawText(curSide + " cm", bx - 14, by + matSz / 2, 13, strokeCol, "right");
 
-      var itW=24,itH=18;
 
-      for(var i=0;i<Math.min(leftover,20);i++){
 
-        var c=i%5,r=Math.floor(i/5);
+      // 正方形下方發光膠囊標籤
 
-        var ix=rx-70+c*(itW+6),iy=ry-12+r*(itH+6);
+      var pillTitle = isFinal
 
-        ctx.fillStyle="rgba(255, 209, 102, 0.35)";ctx.fillRect(ix,iy,itW,itH);
+        ? (k + "² 最大正方形 ｜ 邊長 " + maxSide + " cm ｜ 用掉 " + usedBlocks + " 塊 ✅")
 
-        ctx.strokeStyle="#ffd166";ctx.lineWidth=1.2;ctx.strokeRect(ix,iy,itW,itH);
+        : (curK + "² " + (curK === 1 ? "最小" : "放大") + "正方形 ｜ 邊長 " + curSide + " cm ｜ 需 " + baseBlocks + "×" + curK + "² ＝ " + curUsed + " 塊");
+
+      drawGlowPill(pillTitle, cx, by + matSz + 24, strokeCol, "rgba(8, 22, 40, 0.95)");
+
+
+
+      // 最終步：右側獨立展示剩餘瓷磚，且標籤與瓷磚之間有乾淨間距
+
+      if(isFinal){
+
+        var rx = W * 0.78, ry = H * 0.44;
+
+        drawGlowPill("剩餘 " + leftover + " 塊瓷磚", rx, ry - 42, "#ffd166", "rgba(8, 22, 40, 0.95)", "#ffd166");
+
+        var itW = 24, itH = 18;
+
+        for(var i = 0; i < Math.min(leftover, 20); i++){
+
+          var tc = i % 5, tr = Math.floor(i / 5);
+
+          var ix = rx - 65 + tc * (itW + 6), iy = ry - 14 + tr * (itH + 6);
+
+          ctx.fillStyle = "rgba(255, 209, 102, 0.35)"; ctx.fillRect(ix, iy, itW, itH);
+
+          ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 1.2; ctx.strokeRect(ix, iy, itW, itH);
+
+        }
+
+        var nextK = k + 1;
+
+        var nextNeed = baseBlocks * nextK * nextK;
+
+        drawText(nextK + "² 需 " + nextNeed + " 塊 ❌ 瓷磚不足", rx, ry + 56, 12, "#ff8fa7", "center");
 
       }
 
-      drawText("6² 需 432 塊 ❌ 瓷磚不足",rx,ry+55,12,"#ff8fa7","center");
 
-      drawStepPills(["1²＝12塊","2²＝48塊","3²＝108塊","4²＝192塊","5²＝300塊 ✅"],4,H-22);
+
+      drawStepPills(pillLabels, activePill, H - 22);
 
     }
 
   }
 
-
-
-
-
-
-
   // 3. 池塘周長種樹（GCD）：水波紋、四角大樹與環狀長高
-
-
 
   function drawWordPlantTrees(t){
 
@@ -8556,17 +8488,17 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
 
 
-    var cubeSize=Math.min(W*0.28,H*0.38,150);
+    var baseUnitSz=Math.min(W*0.14,H*0.18,72);
 
-    var brickDX=cubeSize/nx, brickDY=cubeSize/ny, brickDZ=cubeSize/nz;
+    var brickDX=baseUnitSz/nx, brickDY=baseUnitSz/ny, brickDZ=baseUnitSz/nz;
 
 
 
     if(step===0){
 
-      var cx1=W*0.28, cy1=H*0.54;
+      var cx1=W*0.28, cy1=H*0.50;
 
-      var sDX=brickDX*2.0, sDY=brickDY*2.0, sDZ=brickDZ*2.0;
+      var sDX=brickDX*2.4, sDY=brickDY*2.4, sDZ=brickDZ*2.4;
 
       drawIsoCuboid(cx1,cy1,-sDX/2,-sDY/2,-sDZ/2,sDX,sDY,sDZ,"gold","rgba(255,255,255,0.7)",1,1.5);
 
@@ -8576,31 +8508,31 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
       drawText("高 "+Hgt+" cm",cx1-sDX*0.4,cy1-sDZ*0.8,12,"#ffd166","center");
 
-      drawGlowPill("單塊小長方體積木 ("+L+"×"+Wd+"×"+Hgt+" cm)",cx1,H-40,"#ffd166","rgba(8, 22, 40, 0.95)");
+      drawGlowPill("單塊小長方體積木 ("+L+"×"+Wd+"×"+Hgt+" cm)",cx1,H-44,"#ffd166","rgba(8, 22, 40, 0.95)");
 
 
 
       var arrX=W*0.5+8*pulse;
 
-      drawText("➔",arrX,H*0.5,24,"#ffd166","center");
+      drawText("➔",arrX,H*0.48,24,"#ffd166","center");
 
 
 
-      var cx2=W*0.74, cy2=H*0.54;
+      var cx2=W*0.74, cy2=H*0.50;
 
-      drawIsoBoxOutline(cx2,cy2,-cubeSize/2,-cubeSize/2,-cubeSize/2,cubeSize,cubeSize,cubeSize,"#62e7b3",true,2);
+      drawIsoBoxOutline(cx2,cy2,-baseUnitSz/2,-baseUnitSz/2,-baseUnitSz/2,baseUnitSz,baseUnitSz,baseUnitSz,"#62e7b3",true,2);
 
       drawText("目標：拼成大正方體？",cx2,cy2-10,15,"#62e7b3","center");
 
       drawText("邊長 ＝ LCM("+L+", "+Wd+", "+Hgt+") ＝ "+M+" cm",cx2,cy2+14,13,"#62e7b3","center");
 
-      drawGlowPill("目標大正方體 ("+M+"×"+M+"×"+M+" cm)",cx2,H-40,"#62e7b3","rgba(8, 22, 40, 0.95)");
+      drawGlowPill("目標大正方體 ("+M+"×"+M+"×"+M+" cm)",cx2,H-44,"#62e7b3","rgba(8, 22, 40, 0.95)");
 
     }else if(step<=dLen){
 
-      var cx=W*0.5, cy=H*0.54;
+      var cx=W*0.5, cy=H*0.48;
 
-      drawIsoBoxOutline(cx,cy,-cubeSize/2,-cubeSize/2,-cubeSize/2,cubeSize,cubeSize,cubeSize,"rgba(255, 209, 102, 0.45)",true,1.5);
+      drawIsoBoxOutline(cx,cy,-baseUnitSz/2,-baseUnitSz/2,-baseUnitSz/2,baseUnitSz,baseUnitSz,baseUnitSz,"rgba(255, 209, 102, 0.45)",true,1.5);
 
 
 
@@ -8616,35 +8548,45 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
       for(var x=0;x<curNx;x++){
 
-        drawIsoCuboid(cx,cy,-cubeSize/2+x*brickDX,-cubeSize/2,-cubeSize/2,brickDX,brickDY,brickDZ,"blue","rgba(255,255,255,0.4)",0.75);
+        drawIsoCuboid(cx,cy,-baseUnitSz/2+x*brickDX,-baseUnitSz/2,-baseUnitSz/2,brickDX,brickDY,brickDZ,"blue","rgba(255,255,255,0.4)",0.75);
 
       }
 
       for(var y=0;y<curNy;y++){
 
-        drawIsoCuboid(cx,cy,-cubeSize/2,-cubeSize/2+y*brickDY,-cubeSize/2,brickDX,brickDY,brickDZ,"green","rgba(255,255,255,0.4)",0.75);
+        drawIsoCuboid(cx,cy,-baseUnitSz/2,-baseUnitSz/2+y*brickDY,-baseUnitSz/2,brickDX,brickDY,brickDZ,"green","rgba(255,255,255,0.4)",0.75);
 
       }
 
       for(var z=0;z<curNz;z++){
 
-        drawIsoCuboid(cx,cy,-cubeSize/2,-cubeSize/2,-cubeSize/2+z*brickDZ,brickDX,brickDY,brickDZ,"gold","rgba(255,255,255,0.4)",0.75);
+        drawIsoCuboid(cx,cy,-baseUnitSz/2,-baseUnitSz/2,-baseUnitSz/2+z*brickDZ,brickDX,brickDY,brickDZ,"gold","rgba(255,255,255,0.4)",0.75);
 
       }
 
 
 
-      drawText("長排 "+nx+" 塊 ＝ "+L+"×"+nx+" ＝ "+M+" cm",cx+cubeSize*0.6,cy+cubeSize*0.3,12,"#75cfff","left");
+      drawText("長排 "+nx+" 塊 ＝ "+L+"×"+nx+" ＝ "+M+" cm",cx+baseUnitSz*0.65,cy+baseUnitSz*0.3,12,"#75cfff","left");
 
-      drawText("寬排 "+ny+" 塊 ＝ "+Wd+"×"+ny+" ＝ "+M+" cm",cx-cubeSize*0.6,cy+cubeSize*0.3,12,"#62e7b3","right");
+      drawText("寬排 "+ny+" 塊 ＝ "+Wd+"×"+ny+" ＝ "+M+" cm",cx-baseUnitSz*0.65,cy+baseUnitSz*0.3,12,"#62e7b3","right");
 
-      drawText("高疊 "+nz+" 層 ＝ "+Hgt+"×"+nz+" ＝ "+M+" cm",cx-cubeSize*0.4,cy-cubeSize*0.6,12,"#ffd166","center");
+      drawText("高疊 "+nz+" 層 ＝ "+Hgt+"×"+nz+" ＝ "+M+" cm",cx-baseUnitSz*0.45,cy-baseUnitSz*0.65,12,"#ffd166","center");
 
-      drawGlowPill("三軸對齊：長排 "+nx+" 塊、寬排 "+ny+" 塊、高疊 "+nz+" 層 ＝ "+M+" cm",cx,H-36,"#ffd166","rgba(8, 22, 40, 0.95)");
+      drawGlowPill("三軸對齊：長排 "+nx+" 塊、寬排 "+ny+" 塊、高疊 "+nz+" 層 ＝ "+M+" cm",cx,H-44,"#ffd166","rgba(8, 22, 40, 0.95)");
 
     }else if(step===dLen+1){
 
-      var cx=W*0.5, cy=H*0.54;
+      // 1³ 基準正方體：邊長 36 cm，由 3x4x6 = 72 個扁平積木構成
+
+      // 3D 體積視覺隨 k 成長：S1 = 78 px
+
+      var S1 = Math.min(W * 0.16, H * 0.20, 78);
+
+      var cx = W * 0.5, cy = H * 0.42;
+
+      var bX = S1 / nx, bY = S1 / ny, bZ = S1 / nz;
+
+
 
       for(var z=0;z<nz;z++){
 
@@ -8652,11 +8594,11 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
           for(var x=0;x<nx;x++){
 
-            var px=-cubeSize/2+x*brickDX, py=-cubeSize/2+y*brickDY, pz=-cubeSize/2+z*brickDZ;
+            var px = -S1/2 + x*bX, py = -S1/2 + y*bY, pz = -S1/2 + z*bZ;
 
-            var hue=(x*25+y*35+z*40+200)%360;
+            var hue = (x*25 + y*35 + z*40 + 200) % 360;
 
-            drawIsoCuboid(cx,cy,px,py,pz,brickDX,brickDY,brickDZ,hue,"rgba(255,255,255,0.4)",0.9,1);
+            drawIsoCuboid(cx,cy,px,py,pz,bX,bY,bZ,hue,"rgba(255,255,255,0.4)",0.9,1);
 
           }
 
@@ -8664,23 +8606,39 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
       }
 
-      drawIsoBoxOutline(cx,cy,-cubeSize/2,-cubeSize/2,-cubeSize/2,cubeSize,cubeSize,cubeSize,"#ffd166",false,2.5);
+      drawIsoBoxOutline(cx,cy,-S1/2,-S1/2,-S1/2,S1,S1,S1,"#ffd166",false,2.5);
 
-      drawText(M+" cm",cx+cubeSize*0.6,cy+cubeSize*0.3,12,"#ffd166","left");
 
-      drawText(M+" cm",cx-cubeSize*0.6,cy+cubeSize*0.3,12,"#ffd166","right");
 
-      drawText(M+" cm",cx-cubeSize*0.4,cy-cubeSize*0.6,12,"#ffd166","center");
+      // 外側尺寸標籤（完全標在正方體外側邊緣，不壓在內部）
 
-      drawGlowPill("1³ 最小正方體 ｜ 邊長 "+M+" cm ｜ 需 "+nx+"×"+ny+"×"+nz+" ＝ "+baseCubes+" 個積木",cx,H-48,"#ffd166","rgba(8, 22, 40, 0.95)");
+      drawText(M+" cm", cx + S1 * 0.85, cy + S1 * 0.2, 12, "#ffd166", "left");
 
-      drawStepPills(["1³＝72個","2³＝576個","3³＝1944個 ✅","4³＝4608個 ❌"],0,H-22);
+      drawText(M+" cm", cx - S1 * 0.85, cy + S1 * 0.2, 12, "#ffd166", "right");
+
+      drawText(M+" cm", cx, cy - S1 - 12, 12, "#ffd166", "center");
+
+
+
+      // 正方體底部、膠囊與底欄保有乾淨呼吸空間
+
+      drawGlowPill("1³ 最小正方體 ｜ 邊長 "+M+" cm ｜ 需 "+nx+"×"+ny+"×"+nz+" ＝ "+baseCubes+" 個積木", cx, H-50, "#ffd166", "rgba(8, 22, 40, 0.95)");
+
+      drawStepPills(["1³＝72個","2³＝576個","3³＝1944個 ✅","4³＝4608個 ❌"], 0, H-22);
 
     }else if(step===dLen+2){
 
-      var cx=W*0.5, cy=H*0.56;
+      // 2³ 放大正方體：邊長 72 cm，2x2x2 = 8 個基準正方體，共 576 個積木
 
-      var uSz=cubeSize*0.65;
+      // 3D 體積視覺隨 k 成長：S2 = 108 px
+
+      var S2 = Math.min(W * 0.21, H * 0.27, 108);
+
+      var cx = W * 0.5, cy = H * 0.40;
+
+      var uSz = S2 / 2;
+
+
 
       for(var kz=0;kz<2;kz++){
 
@@ -8688,11 +8646,13 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
           for(var kx=0;kx<2;kx++){
 
-            var bx=-uSz+kx*uSz, by=-uSz+ky*uSz, bz=-uSz+kz*uSz;
+            var bx = -S2/2 + kx*uSz, by = -S2/2 + ky*uSz, bz = -S2/2 + kz*uSz;
 
-            var hue=((kx+ky+kz)%2===0)?210:195;
+            var hue = ((kx + ky + kz) % 2 === 0) ? 210 : 195;
 
-            drawIsoCuboid(cx,cy,bx,by,bz,uSz,uSz,uSz,hue,"rgba(255, 209, 102, 0.6)",0.85,1.5);
+            drawIsoCuboid(cx,cy,bx,by,bz,uSz,uSz,uSz,hue,"rgba(255, 209, 102, 0.75)",0.88,1.5);
+
+            drawIsoBoxOutline(cx,cy,bx,by,bz,uSz,uSz,uSz,"rgba(255,255,255,0.25)",false,0.8);
 
           }
 
@@ -8700,21 +8660,37 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
       }
 
-      drawIsoBoxOutline(cx,cy,-uSz,-uSz,-uSz,2*uSz,2*uSz,2*uSz,"#75cfff",false,2.5);
+      drawIsoBoxOutline(cx,cy,-S2/2,-S2/2,-S2/2,S2,S2,S2,"#75cfff",false,2.5);
 
-      drawText((M*2)+" cm",cx+uSz*1.2,cy+uSz*0.6,12,"#75cfff","left");
 
-      drawText((M*2)+" cm",cx-uSz*1.2,cy+uSz*0.6,12,"#75cfff","right");
 
-      drawGlowPill("2³ 放大正方體 ｜ 邊長 "+(M*2)+" cm ｜ 用掉 "+baseCubes+"×2³ ＝ "+(baseCubes*8)+" 個積木",cx,H-48,"#75cfff","rgba(8, 22, 40, 0.95)");
+      // 外側尺寸標籤（完全標在正方體外側邊緣，不壓在內部）
 
-      drawStepPills(["1³＝72個","2³＝576個","3³＝1944個 ✅","4³＝4608個 ❌"],1,H-22);
+      drawText((M*2)+" cm", cx + S2 * 0.85, cy + S2 * 0.2, 12, "#75cfff", "left");
+
+      drawText((M*2)+" cm", cx - S2 * 0.85, cy + S2 * 0.2, 12, "#75cfff", "right");
+
+      drawText((M*2)+" cm", cx, cy - S2 - 12, 12, "#75cfff", "center");
+
+
+
+      drawGlowPill("2³ 放大正方體 ｜ 邊長 "+(M*2)+" cm ｜ 用掉 "+baseCubes+"×2³ ＝ "+(baseCubes*8)+" 個積木", cx, H-50, "#75cfff", "rgba(8, 22, 40, 0.95)");
+
+      drawStepPills(["1³＝72個","2³＝576個","3³＝1944個 ✅","4³＝4608個 ❌"], 1, H-22);
 
     }else{
 
-      var cx=W*0.36, cy=H*0.56;
+      // 3³ 最大正方體：邊長 108 cm，3x3x3 = 27 個基準正方體，共 1944 個積木
 
-      var uSz=cubeSize*0.44;
+      // 3D 體積視覺隨 k 成長：S3 = 132 px (縮小 12%，中心微調上移，確保與膠囊有 >=40px 乾淨呼吸空間)
+
+      var S3 = Math.min(W * 0.25, H * 0.32, 132);
+
+      var cx = W * 0.35, cy = H * 0.39;
+
+      var uSz = S3 / 3;
+
+
 
       for(var kz=0;kz<3;kz++){
 
@@ -8722,11 +8698,13 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
           for(var kx=0;kx<3;kx++){
 
-            var bx=-1.5*uSz+kx*uSz, by=-1.5*uSz+ky*uSz, bz=-1.5*uSz+kz*uSz;
+            var bx = -S3/2 + kx*uSz, by = -S3/2 + ky*uSz, bz = -S3/2 + kz*uSz;
 
-            var hue=((kx+ky+kz)%2===0)?155:175;
+            var hue = ((kx + ky + kz) % 2 === 0) ? 155 : 175;
 
-            drawIsoCuboid(cx,cy,bx,by,bz,uSz,uSz,uSz,hue,"rgba(255,255,255,0.3)",0.88,1);
+            drawIsoCuboid(cx,cy,bx,by,bz,uSz,uSz,uSz,hue,"rgba(255,255,255,0.35)",0.9,1);
+
+            drawIsoBoxOutline(cx,cy,bx,by,bz,uSz,uSz,uSz,"rgba(98,231,179,0.3)",false,0.7);
 
           }
 
@@ -8734,49 +8712,57 @@ body.phone .ladder{font-size:clamp(20px,5vw,30px)}
 
       }
 
-      drawIsoBoxOutline(cx,cy,-1.5*uSz,-1.5*uSz,-1.5*uSz,3*uSz,3*uSz,3*uSz,"#62e7b3",false,2.5);
-
-      drawText(maxSide+" cm",cx+uSz*1.8,cy+uSz*0.9,12,"#62e7b3","left");
-
-      drawText(maxSide+" cm",cx-1.8*uSz,cy+uSz*0.9,12,"#62e7b3","right");
-
-      drawGlowPill("3³ 最大正方體 ｜ 邊長 "+maxSide+" cm ｜ 用掉 "+usedCubes+" 個積木 ✅",cx,H-48,"#62e7b3","rgba(8, 22, 40, 0.95)");
+      drawIsoBoxOutline(cx,cy,-S3/2,-S3/2,-S3/2,S3,S3,S3,"#62e7b3",false,2.5);
 
 
 
-      var rx=W*0.78, ry=H*0.46;
+      // 外側尺寸標籤（完全標在正方體外側邊緣，不壓在綠色面上！）
 
-      drawGlowPill("剩餘 "+leftover+" 個積木",rx,ry-36,"#ffd166","rgba(8, 22, 40, 0.95)","#ffd166");
+      drawText(maxSide+" cm", cx + S3 * 0.88, cy + S3 * 0.2, 12, "#62e7b3", "left");
 
-      var bDX=18, bDY=13.5, bDZ=9;
+      drawText(maxSide+" cm", cx - S3 * 0.88, cy + S3 * 0.2, 12, "#62e7b3", "right");
+
+      drawText(maxSide+" cm", cx, cy - S3 - 12, 12, "#62e7b3", "center");
+
+
+
+      // 綠色膠囊標籤：與正方體底部及底欄保有充裕呼吸空間
+
+      drawGlowPill("3³ 最大正方體 ｜ 邊長 "+maxSide+" cm ｜ 用掉 "+usedCubes+" 個積木 ✅", cx, H-50, "#62e7b3", "rgba(8, 22, 40, 0.95)");
+
+
+
+      // 右側：剩餘 56 個積木展示區
+
+      // 膠囊往上移至 ry - 66，黃色積木堆向下偏移，確保至少 25px 以上乾淨呼吸空間！
+
+      var rx = W * 0.78, ry = H * 0.44;
+
+      drawGlowPill("剩餘 "+leftover+" 個積木", rx, ry - 66, "#ffd166", "rgba(8, 22, 40, 0.95)", "#ffd166");
+
+
+
+      var bDX = 18, bDY = 13.5, bDZ = 9;
 
       for(var i=0;i<Math.min(leftover,24);i++){
 
-        var c=i%4, r=Math.floor(i/4)%3, l=Math.floor(i/12);
+        var c = i % 4, r = Math.floor(i / 4) % 3, l = Math.floor(i / 12);
 
-        var ix=-40+c*(bDX+4), iy=-10+r*(bDY+4), iz=l*bDZ;
+        var ix = -38 + c * (bDX + 4), iy = 6 + r * (bDY + 4), iz = l * bDZ;
 
-        drawIsoCuboid(rx,ry,ix,iy,iz,bDX,bDY,bDZ,"gold","rgba(255,255,255,0.4)",0.85);
+        drawIsoCuboid(rx, ry, ix, iy, iz, bDX, bDY, bDZ, "gold", "rgba(255,255,255,0.45)", 0.88);
 
       }
 
-      drawText("4³ 需 4608 個 ❌ 積木不足",rx,ry+56,12,"#ff8fa7","center");
+      drawText("4³ 需 4608 個 ❌ 積木不足", rx, ry + 68, 12, "#ff8fa7", "center");
 
-      drawStepPills(["1³＝72個","2³＝576個","3³＝1944個 ✅","4³＝4608個 ❌"],2,H-22);
+      drawStepPills(["1³＝72個","2³＝576個","3³＝1944個 ✅","4³＝4608個 ❌"], 2, H-22);
 
     }
 
   }
 
-
-
-
-
-
-
   // 6. 環形跑道多人跑步（含總時限相會次數）
-
-
 
   function drawWordTrackRun(t){
 
